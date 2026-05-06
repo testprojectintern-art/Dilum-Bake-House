@@ -5,7 +5,7 @@ import { billsApi } from './billsApi';
 export const useBills = (filters = {}) => useQuery({
     queryKey: ['bills', filters],
     queryFn: () => billsApi.list(filters),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
 });
 
 export const useBill = (id) => useQuery({

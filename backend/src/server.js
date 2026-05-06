@@ -31,6 +31,9 @@ import supplierReturnRoutes from './routes/supplierReturnRoutes.js';
 import repairRoutes from './routes/repairRoutes.js';
 import hrRoutes from './routes/hrRoutes.js';
 import payrollRoutes from './routes/payrollRoutes.js';
+import chequeRoutes from './routes/chequeRoutes.js';
+import bankRoutes from './routes/bankRoutes.js';
+import fundTransferRoutes from './routes/fundTransferRoutes.js';
 
 import reportsRoutes from './routes/reportsRoutes.js';
 
@@ -104,6 +107,9 @@ app.use('/api/supplier-returns', supplierReturnRoutes);
 app.use('/api/repairs', repairRoutes);
 app.use('/api/hr', hrRoutes);
 app.use('/api/payroll', payrollRoutes);
+app.use('/api/cheques', chequeRoutes);
+app.use('/api/bank-accounts', bankRoutes);
+app.use('/api/fund-transfers', fundTransferRoutes);
 app.use('/api/reports', reportsRoutes);
 
 
@@ -115,12 +121,6 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString(),
     });
 });
-
-// API Routes (we'll add these in next steps)
-// app.use('/api/auth', authLimiter, authRoutes);
-// app.use('/api/users', userRoutes);
-// app.use('/api/products', productRoutes);
-// app.use('/api/sales-orders', salesOrderRoutes);
 
 // Error handling (must be LAST)
 app.use(notFound);

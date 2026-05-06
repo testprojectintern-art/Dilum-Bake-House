@@ -5,7 +5,7 @@ import { productionApi } from './productionApi';
 export const useProductionOrders = (filters = {}) => useQuery({
     queryKey: ['productionOrders', filters],
     queryFn: () => productionApi.list(filters),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
 });
 
 export const useProductionOrder = (id) => useQuery({

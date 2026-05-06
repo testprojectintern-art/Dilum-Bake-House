@@ -4,6 +4,8 @@ import Payment from '../models/Payment.js';
 import Invoice from '../models/Invoice.js';
 import Bill from '../models/Bill.js';
 import Customer from '../models/Customer.js';
+import Cheque from '../models/Cheque.js';
+import BankAccount from '../models/BankAccount.js';
 import { updateCustomerBalance } from './invoiceController.js';
 
 /**
@@ -87,11 +89,43 @@ export const createPayment = asyncHandler(async (req, res) => {
             if (direction === 'received') {
                 await updateCustomerBalance(customerId, session);
             }
+
+            // --- LINKING LOGIC ---
+
+            // 1. If Cheque, create Cheque record
+            if (rest.method === 'cheque') {
+                const cheque = new Cheque({
+                    chequeNumber: rest.chequeNumber,
+                    chequeDate: rest.chequeDate,
+                    amount: rest.amount,
+                    bankName: rest.bankName,
+                    direction: direction === 'received' ? 'incoming' : 'outgoing',
+                    payeeName: partyName,
+                    paymentId: payment._id,
+                    customerId: direction === 'received' ? customerId : undefined,
+                    supplierId: direction === 'paid' ? supplierId : undefined,
+                    createdBy: req.user._id,
+                    status: 'pending',
+                    notes: `Created from payment ${payment.paymentNumber}`
+                });
+                await cheque.save({ session });
+            }
+
+            // 2. If Bank Transfer / Direct Payment via Bank, update balance
+            if (rest.bankAccountId && (rest.method === 'bank_transfer' || rest.method === 'card' || rest.method === 'mobile_wallet')) {
+                const bankAcc = await BankAccount.findById(rest.bankAccountId).session(session);
+                if (bankAcc) {
+                    const amountChange = direction === 'received' ? rest.amount : -rest.amount;
+                    bankAcc.currentBalance = +(bankAcc.currentBalance + amountChange).toFixed(2);
+                    await bankAcc.save({ session });
+                }
+            }
         });
 
         const populated = await Payment.findById(payment._id)
             .populate('customerId', 'displayName customerCode')
-            .populate('supplierId', 'displayName supplierCode');
+            .populate('supplierId', 'displayName supplierCode')
+            .populate('bankAccountId', 'accountName bankName');
 
         res.status(201).json({ success: true, data: populated });
     } catch (err) {
@@ -150,7 +184,87 @@ export const getPaymentById = asyncHandler(async (req, res) => {
         .populate('customerId', 'displayName customerCode')
         .populate('supplierId', 'displayName supplierCode')
         .populate('receivedBy', 'firstName lastName')
+        .populate('bankAccountId', 'accountName bankName')
         .populate('createdBy', 'firstName lastName');
     if (!payment) { res.status(404); throw new Error('Payment not found'); }
     res.json({ success: true, data: payment });
+});
+
+/**
+ * DELETE /api/payments/:id
+ * Delete (soft delete) a payment and reverse all its effects
+ */
+export const deletePayment = asyncHandler(async (req, res) => {
+    const session = await mongoose.startSession();
+    try {
+        await session.withTransaction(async () => {
+            const payment = await Payment.findById(req.params.id).session(session);
+            if (!payment) throw new Error('Payment not found');
+            if (payment.deletedAt) throw new Error('Payment already deleted');
+
+            // 1. Reverse Allocations
+            for (const alloc of payment.allocations) {
+                if (alloc.documentType === 'invoice') {
+                    const inv = await Invoice.findById(alloc.documentId).session(session);
+                    if (inv) {
+                        inv.amountPaid = +(inv.amountPaid - alloc.amount).toFixed(2);
+                        await inv.save({ session });
+                    }
+                } else if (alloc.documentType === 'bill') {
+                    const bill = await Bill.findById(alloc.documentId).session(session);
+                    if (bill) {
+                        bill.amountPaid = +(bill.amountPaid - alloc.amount).toFixed(2);
+                        await bill.save({ session });
+                    }
+                }
+            }
+
+            // 2. Reverse Bank Balance (if direct payment)
+            if (payment.bankAccountId && (payment.method === 'bank_transfer' || payment.method === 'card' || payment.method === 'mobile_wallet')) {
+                const bankAcc = await BankAccount.findById(payment.bankAccountId).session(session);
+                if (bankAcc) {
+                    const amountChange = payment.direction === 'received' ? -payment.amount : payment.amount;
+                    bankAcc.currentBalance = +(bankAcc.currentBalance + amountChange).toFixed(2);
+                    await bankAcc.save({ session });
+                }
+            }
+
+            // 3. Delete/Cancel Linked Cheque
+            if (payment.method === 'cheque') {
+                const Cheque = (await import('../models/Cheque.js')).default;
+                const cheque = await Cheque.findOne({ paymentId: payment._id }).session(session);
+                if (cheque) {
+                    // If cheque was already cleared, reverse that too!
+                    if (cheque.status === 'cleared' && cheque.depositedBankAccountId) {
+                        const bankAcc = await BankAccount.findById(cheque.depositedBankAccountId).session(session);
+                        if (bankAcc) {
+                            const amountChange = cheque.direction === 'incoming' ? -cheque.amount : cheque.amount;
+                            bankAcc.currentBalance = +(bankAcc.currentBalance + amountChange).toFixed(2);
+                            await bankAcc.save({ session });
+                        }
+                    }
+                    cheque.status = 'cancelled';
+                    cheque.deletedAt = new Date();
+                    await cheque.save({ session });
+                }
+            }
+
+            // 4. Update Customer Balance
+            if (payment.direction === 'received' && payment.customerId) {
+                await updateCustomerBalance(payment.customerId, session);
+            }
+
+            // 5. Soft Delete Payment
+            payment.deletedAt = new Date();
+            payment.status = 'cancelled';
+            await payment.save({ session });
+        });
+
+        res.json({ success: true, message: 'Payment deleted and effects reversed' });
+    } catch (err) {
+        res.status(400);
+        throw new Error(err.message || 'Failed to delete payment');
+    } finally {
+        session.endSession();
+    }
 });

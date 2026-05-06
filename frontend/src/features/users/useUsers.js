@@ -13,7 +13,7 @@ const usersApi = {
 export const useUsers = (filters = {}) => useQuery({
     queryKey: ['users', filters],
     queryFn: () => usersApi.list(filters),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
 });
 
 export const useUser = (id) => useQuery({

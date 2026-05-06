@@ -11,7 +11,7 @@ const success = (qc, keys, msg) => () => {
 const onError = (err) => toast.error(err.response?.data?.message || 'Failed');
 
 // Customer Returns
-export const useReturns = (filters = {}) => useQuery({ queryKey: ['returns', filters], queryFn: () => returnsApi.list(filters), keepPreviousData: true });
+export const useReturns = (filters = {}) => useQuery({ queryKey: ['returns', filters], queryFn: () => returnsApi.list(filters), placeholderData: (prev) => prev });
 export const useReturn = (id) => useQuery({ queryKey: ['return', id], queryFn: () => returnsApi.getById(id), enabled: !!id });
 export const useCreateReturn = () => { const qc = useQueryClient(); return useMutation({ mutationFn: returnsApi.create, onSuccess: success(qc, ['returns'], 'Return created'), onError }); };
 export const useReturnActions = () => {
@@ -32,7 +32,7 @@ export const useCreditNote = (id) => useQuery({ queryKey: ['creditNote', id], qu
 export const useApplyCreditNote = () => { const qc = useQueryClient(); return useMutation({ mutationFn: ({ id, data }) => creditNotesApi.apply(id, data), onSuccess: success(qc, ['creditNotes', 'creditNote', 'invoices', 'customers'], 'Credit applied'), onError }); };
 
 // Damages
-export const useDamages = (filters = {}) => useQuery({ queryKey: ['damages', filters], queryFn: () => damagesApi.list(filters), keepPreviousData: true });
+export const useDamages = (filters = {}) => useQuery({ queryKey: ['damages', filters], queryFn: () => damagesApi.list(filters), placeholderData: (prev) => prev });
 export const useDamage = (id) => useQuery({ queryKey: ['damage', id], queryFn: () => damagesApi.getById(id), enabled: !!id });
 export const useCreateDamage = () => { const qc = useQueryClient(); return useMutation({ mutationFn: damagesApi.create, onSuccess: success(qc, ['damages', 'stock'], 'Damage recorded'), onError }); };
 export const useWriteOffDamage = () => { const qc = useQueryClient(); return useMutation({ mutationFn: damagesApi.writeOff, onSuccess: success(qc, ['damages'], 'Written off'), onError }); };

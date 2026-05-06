@@ -1,5 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Receipt } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { paymentsApi } from '../features/payments/paymentsApi';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -20,6 +22,14 @@ export default function BillDetailPage() {
 
     const fmt = (n) => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 2 }).format(n || 0);
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-LK') : '—';
+    
+    // Fetch payments allocated to this bill
+    const { data: paymentsData } = useQuery({
+        queryKey: ['paymentsForBill', id],
+        queryFn: () => paymentsApi.list({ documentId: id, limit: 50 }),
+        enabled: !!id,
+    });
+    const payments = paymentsData?.data || [];
 
     if (isLoading || !bill) return <div className="py-16 text-center text-gray-500">Loading...</div>;
 
@@ -112,6 +122,35 @@ export default function BillDetailPage() {
                             </tbody>
                         </table>
                     </Card>
+
+                    {payments.length > 0 && (
+                        <Card>
+                            <div className="px-6 py-4 border-b flex items-center justify-between">
+                                <h3 className="text-sm font-semibold text-gray-700">Payment History</h3>
+                                <Badge variant="success">{payments.length} Payments</Badge>
+                            </div>
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b">
+                                    <tr>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Date</th>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Method</th>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Ref #</th>
+                                        <th className="px-4 py-2 text-right text-xs font-semibold text-gray-600">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                    {payments.map((p) => (
+                                        <tr key={p._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/payments/${p._id}`)}>
+                                            <td className="px-4 py-3 text-sm">{fmtDate(p.paymentDate)}</td>
+                                            <td className="px-4 py-3 text-sm capitalize">{p.method.replace('_', ' ')}</td>
+                                            <td className="px-4 py-3 text-sm font-mono">{p.paymentNumber}</td>
+                                            <td className="px-4 py-3 text-right text-sm font-medium text-green-600">{fmt(p.amount)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </Card>
+                    )}
                 </div>
 
                 <div className="space-y-6">

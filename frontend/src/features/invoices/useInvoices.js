@@ -5,7 +5,7 @@ import { invoicesApi } from './invoicesApi';
 export const useInvoices = (filters = {}) => useQuery({
     queryKey: ['invoices', filters],
     queryFn: () => invoicesApi.list(filters),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
 });
 
 export const useInvoice = (id) => useQuery({

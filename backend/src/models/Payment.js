@@ -59,6 +59,7 @@ const paymentSchema = new mongoose.Schema({
     receiptImageUrl: String,
 
     receivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    bankAccountId: { type: mongoose.Schema.Types.ObjectId, ref: 'BankAccount' },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     deletedAt: { type: Date, default: null },
 }, { timestamps: true });

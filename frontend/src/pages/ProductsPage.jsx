@@ -91,6 +91,21 @@ export default function ProductsPage() {
             render: (row) => <span className="font-medium">{formatPrice(row.basePrice)}</span>,
         },
         {
+            key: 'profit',
+            label: 'Profit (%)',
+            render: (row) => {
+                const cost = row.costs?.standardCost || 0;
+                const price = row.basePrice || 0;
+                if (cost <= 0) return <span className="text-gray-400">—</span>;
+                const profit = ((price - cost) / cost * 100).toFixed(1);
+                return (
+                    <span className={`font-semibold ${+profit > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {profit}%
+                    </span>
+                );
+            },
+        },
+        {
             key: 'status',
             label: 'Status',
             render: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge>,

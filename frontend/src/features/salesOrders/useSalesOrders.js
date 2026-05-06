@@ -5,7 +5,7 @@ import { salesOrdersApi } from './salesOrdersApi';
 export const useSalesOrders = (filters = {}) => useQuery({
     queryKey: ['salesOrders', filters],
     queryFn: () => salesOrdersApi.list(filters),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
 });
 
 export const useSalesOrder = (id) => useQuery({

@@ -40,7 +40,7 @@ export default function DashboardPage() {
             <PageHeader title="Dashboard" description="Real-time overview of your business" />
 
             {/* Primary KPIs */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <KpiCard
                     label="Revenue This Month" value={fmtShort(k.revenue.thisMonth)}
                     icon={DollarSign} iconColor="text-green-600" iconBg="bg-green-50"
@@ -66,7 +66,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Secondary KPIs */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <KpiCard label="Pending Approvals" value={k.orders.pendingApproval}
                     icon={FileText} iconColor="text-indigo-600" iconBg="bg-indigo-50" />
                 <KpiCard label="Pending Dispatch" value={k.orders.pendingDispatch}
@@ -80,8 +80,8 @@ export default function DashboardPage() {
             </div>
 
             {/* Revenue Chart */}
-            <div className="grid grid-cols-3 gap-6 mb-6">
-                <Card className="col-span-2 p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <Card className="lg:col-span-2 p-6">
                     <h3 className="text-sm font-semibold text-gray-700 mb-4">Revenue Trend (Last 6 Months)</h3>
                     <ResponsiveContainer width="100%" height={280}>
                         <LineChart data={revenueData?.data || []}>
@@ -115,7 +115,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Top Products & Top Customers */}
-            <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <Card className="p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-sm font-semibold text-gray-700">Top Products This Month</h3>
@@ -186,7 +186,7 @@ export default function DashboardPage() {
                         </h3>
                         <Button variant="outline" size="sm" onClick={() => navigate('/stock')}>View Stock</Button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {k.stock.lowStockItems.slice(0, 10).map((item) => (
                             <div key={item.productId} className="flex items-center justify-between py-2 px-3 bg-red-50 rounded">
                                 <div>

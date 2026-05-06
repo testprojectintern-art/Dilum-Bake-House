@@ -2,23 +2,31 @@ import asyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import GoodsReceiptNote from '../models/GoodsReceiptNote.js';
 import PurchaseOrder from '../models/PurchaseOrder.js';
-import { increaseStock } from '../services/stockService.js';
+import { increaseStock, decreaseStock } from '../services/stockService.js';
 
 /**
  * Create a GRN — receives goods and increases stock atomically.
  */
 export const createGrn = asyncHandler(async (req, res) => {
-    const { purchaseOrderId, warehouseId, items, ...rest } = req.body;
+    const { purchaseOrderId, supplierId, warehouseId, items, ...rest } = req.body;
 
-    const po = await PurchaseOrder.findById(purchaseOrderId);
-    if (!po) { res.status(404); throw new Error('Purchase order not found'); }
-    if (!['approved', 'sent', 'partially_received'].includes(po.status)) {
-        res.status(400);
-        throw new Error(`Cannot receive against PO with status '${po.status}'`);
+    let po = null;
+    if (purchaseOrderId) {
+        po = await PurchaseOrder.findById(purchaseOrderId);
+        if (!po) { res.status(404); throw new Error('Purchase order not found'); }
+        if (!['approved', 'sent', 'partially_received'].includes(po.status)) {
+            res.status(400);
+            throw new Error(`Cannot receive against PO with status '${po.status}'`);
+        }
     }
 
-    // Validate items against PO
-    const poItemsMap = new Map(po.items.map((i) => [i._id.toString(), i]));
+    if (!po && !supplierId) {
+        res.status(400);
+        throw new Error('Supplier ID is required for GRN without Purchase Order');
+    }
+
+    // Validate items against PO if available
+    const poItemsMap = po ? new Map(po.items.map((i) => [i._id.toString(), i])) : null;
 
     const session = await mongoose.startSession();
     let grn;
@@ -27,20 +35,20 @@ export const createGrn = asyncHandler(async (req, res) => {
         await session.withTransaction(async () => {
             // Build GRN line items
             const grnItems = items.map((item) => {
-                const poLine = item.poLineItemId ? poItemsMap.get(item.poLineItemId) : null;
+                const poLine = (po && item.poLineItemId) ? poItemsMap.get(item.poLineItemId) : null;
                 const accepted = item.acceptedQuantity ?? item.receivedQuantity;
 
                 return {
                     poLineItemId: item.poLineItemId,
                     productId: item.productId,
-                    productCode: poLine?.productCode || '',
-                    productName: poLine?.productName || '',
+                    productCode: item.productCode || poLine?.productCode || '',
+                    productName: item.productName || poLine?.productName || '',
                     orderedQuantity: poLine?.orderedQuantity || 0,
                     receivedQuantity: item.receivedQuantity,
                     acceptedQuantity: accepted,
                     rejectedQuantity: item.rejectedQuantity || 0,
                     damagedQuantity: item.damagedQuantity || 0,
-                    unitOfMeasure: poLine?.unitOfMeasure || '',
+                    unitOfMeasure: item.unitOfMeasure || poLine?.unitOfMeasure || '',
                     unitPrice: item.unitPrice || poLine?.unitPrice || 0,
                     batchNumber: item.batchNumber || null,
                     manufactureDate: item.manufactureDate || null,
@@ -52,10 +60,10 @@ export const createGrn = asyncHandler(async (req, res) => {
             });
 
             grn = new GoodsReceiptNote({
-                purchaseOrderId: po._id,
-                poNumber: po.poNumber,
-                supplierId: po.supplierId,
-                supplierName: po.supplierSnapshot?.name,
+                purchaseOrderId: po?._id,
+                poNumber: po?.poNumber,
+                supplierId: po?.supplierId || supplierId,
+                supplierName: po?.supplierSnapshot?.name || rest.supplierName,
                 warehouseId,
                 items: grnItems,
                 status: 'received',
@@ -83,7 +91,7 @@ export const createGrn = asyncHandler(async (req, res) => {
                         id: grn._id,
                         number: grn.grnNumber,
                     },
-                    reason: `GRN against PO ${po.poNumber}`,
+                    reason: po ? `GRN against PO ${po.poNumber}` : 'GRN (direct)',
                     userId: req.user._id,
                     session,
                 });
@@ -95,15 +103,17 @@ export const createGrn = asyncHandler(async (req, res) => {
             await grn.save({ session });
 
             // Update PO: increment received quantities on lines
-            for (const grnItem of grn.items) {
-                if (!grnItem.poLineItemId) continue;
-                const poLine = po.items.id(grnItem.poLineItemId);
-                if (poLine) {
-                    poLine.receivedQuantity = (poLine.receivedQuantity || 0) + grnItem.acceptedQuantity;
+            if (po) {
+                for (const grnItem of grn.items) {
+                    if (!grnItem.poLineItemId) continue;
+                    const poLine = po.items.id(grnItem.poLineItemId);
+                    if (poLine) {
+                        poLine.receivedQuantity = (poLine.receivedQuantity || 0) + grnItem.acceptedQuantity;
+                    }
                 }
+                po.grns = [...(po.grns || []), grn._id];
+                await po.save({ session });
             }
-            po.grns = [...(po.grns || []), grn._id];
-            await po.save({ session });
         });
 
         const populated = await GoodsReceiptNote.findById(grn._id)
@@ -165,4 +175,68 @@ export const getGrnById = asyncHandler(async (req, res) => {
         .populate('createdBy', 'firstName lastName');
     if (!grn) { res.status(404); throw new Error('GRN not found'); }
     res.json({ success: true, data: grn });
+});
+
+/**
+ * Cancel a GRN — reverses stock increase and updates linked PO.
+ */
+export const cancelGrn = asyncHandler(async (req, res) => {
+    const session = await mongoose.startSession();
+    try {
+        await session.withTransaction(async () => {
+            const grn = await GoodsReceiptNote.findById(req.params.id).session(session);
+            if (!grn) throw new Error('GRN not found');
+            if (grn.status === 'cancelled') throw new Error('GRN already cancelled');
+
+            // 1. Decrease stock for each accepted item in the GRN
+            for (const grnItem of grn.items) {
+                if (grnItem.acceptedQuantity <= 0) continue;
+
+                await decreaseStock({
+                    productId: grnItem.productId,
+                    warehouseId: grn.warehouseId,
+                    quantity: grnItem.acceptedQuantity,
+                    movementType: 'adjustment_out', // Or 'grn_cancellation'
+                    batchNumber: grnItem.batchNumber || null,
+                    sourceDocument: {
+                        type: 'grn_cancellation',
+                        id: grn._id,
+                        number: grn.grnNumber,
+                    },
+                    reason: `Cancellation of GRN ${grn.grnNumber}`,
+                    userId: req.user._id,
+                    session,
+                });
+            }
+
+            // 2. Revert PO received quantities if linked
+            if (grn.purchaseOrderId) {
+                const po = await PurchaseOrder.findById(grn.purchaseOrderId).session(session);
+                if (po) {
+                    for (const grnItem of grn.items) {
+                        if (!grnItem.poLineItemId) continue;
+                        const poLine = po.items.id(grnItem.poLineItemId);
+                        if (poLine) {
+                            poLine.receivedQuantity = Math.max(0, (poLine.receivedQuantity || 0) - grnItem.acceptedQuantity);
+                        }
+                    }
+                    // Remove this GRN from PO's list? Or keep it with cancelled status?
+                    // Usually we keep the link.
+                    await po.save({ session });
+                }
+            }
+
+            grn.status = 'cancelled';
+            grn.cancelledAt = new Date();
+            grn.cancelledBy = req.user._id;
+            await grn.save({ session });
+        });
+
+        res.json({ success: true, message: 'GRN cancelled and stock reversed' });
+    } catch (err) {
+        res.status(400);
+        throw new Error(err.message || 'Failed to cancel GRN');
+    } finally {
+        session.endSession();
+    }
 });

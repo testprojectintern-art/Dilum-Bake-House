@@ -6,7 +6,7 @@ export const useCustomers = (filters = {}) => {
     return useQuery({
         queryKey: ['customers', filters],
         queryFn: () => customersApi.list(filters),
-        keepPreviousData: true,
+        placeholderData: (prev) => prev,
     });
 };
 

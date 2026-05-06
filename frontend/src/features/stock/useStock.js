@@ -5,13 +5,13 @@ import { stockApi } from './stockApi';
 export const useStockItems = (filters = {}) => useQuery({
     queryKey: ['stock', filters],
     queryFn: () => stockApi.list(filters),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
 });
 
 export const useStockMovements = (filters = {}) => useQuery({
     queryKey: ['stockMovements', filters],
     queryFn: () => stockApi.movements(filters),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
 });
 
 export const useReservations = (filters = {}) => useQuery({

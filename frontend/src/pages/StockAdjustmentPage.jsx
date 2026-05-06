@@ -12,6 +12,7 @@ import Textarea from '../components/ui/Textarea';
 
 import { useWarehouses } from '../features/warehouses/useWarehouses';
 import { useAdjustStock } from '../features/stock/useStock';
+import { useAuthStore } from '../store/authStore';
 import { useQuery } from '@tanstack/react-query';
 import { stockApi } from '../features/stock/stockApi';
 
@@ -27,6 +28,25 @@ const adjustmentReasons = [
 
 export default function StockAdjustmentPage() {
     const navigate = useNavigate();
+    const { user } = useAuthStore();
+    
+    const canAdjust = user?.role === 'admin' || 
+                    user?.role === 'inventory_admin' || 
+                    user?.permissions?.includes('adjust_stock');
+
+    if (!canAdjust) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20">
+                <Settings2 size={64} className="text-gray-300 mb-4" />
+                <h2 className="text-xl font-bold text-gray-900">Access Restricted</h2>
+                <p className="text-gray-500">You do not have permission to perform stock adjustments.</p>
+                <Button variant="outline" className="mt-6" onClick={() => navigate('/stock')}>
+                    Back to Stock
+                </Button>
+            </div>
+        );
+    }
+
     const [warehouseId, setWarehouseId] = useState('');
     const [notes, setNotes] = useState('');
     const [lines, setLines] = useState([{ productId: '', adjustmentQuantity: '', reason: 'physical_count' }]);

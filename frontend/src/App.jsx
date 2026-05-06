@@ -13,6 +13,11 @@ import SalesOrderDetailPage from './pages/SalesOrderDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ComingSoonPage from './pages/ComingSoonPage';
+import PriceCheckerPage from './pages/PriceCheckerPage';
+import WholesalePricesPage from './pages/WholesalePricesPage';
+import ChequesPage from './pages/ChequesPage';
+import BankAccountsPage from './pages/BankAccountsPage';
+import FundTransfersPage from './pages/FundTransfersPage';
 import WarehousesPage from './pages/WarehousesPage';
 import StockPage from './pages/StockPage';
 import OpeningStockPage from './pages/OpeningStockPage';
@@ -23,6 +28,7 @@ import SuppliersPage from './pages/SuppliersPage';
 import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import PurchaseOrderFormPage from './pages/PurchaseOrderFormPage';
 import PurchaseOrderDetailPage from './pages/PurchaseOrderDetailPage';
+import GrnsPage from './pages/GrnsPage';
 import InvoicesPage from './pages/InvoicesPage';
 import InvoiceFromSalesOrderPage from './pages/InvoiceFromSalesOrderPage';
 import InvoiceFormPage from './pages/InvoiceFormPage';
@@ -30,6 +36,8 @@ import InvoiceDetailPage from './pages/InvoiceDetailPage';
 import BillsPage from './pages/BillsPage';
 import BillDetailPage from './pages/BillDetailPage';
 import BillFromGrnPage from './pages/BillFromGrnPage';
+import DamagesPage from './pages/DamagesPage';
+import SupplierReturnsPage from './pages/SupplierReturnsPage';
 import PaymentsPage from './pages/PaymentsPage';
 import PaymentFormPage from './pages/PaymentFormPage';
 import PaymentDetailPage from './pages/PaymentDetailPage';
@@ -47,8 +55,6 @@ import ReturnFormPage from './pages/ReturnFormPage';
 import ReturnDetailPage from './pages/ReturnDetailPage';
 import CreditNotesPage from './pages/CreditNotesPage';
 import CreditNoteDetailPage from './pages/CreditNoteDetailPage';
-import DamagesPage from './pages/DamagesPage';
-import SupplierReturnsPage from './pages/SupplierReturnsPage';
 import SupplierReturnDetailPage from './pages/SupplierReturnDetailPage';
 import RepairsPage from './pages/RepairsPage';
 import RepairDetailPage from './pages/RepairDetailPage';
@@ -89,10 +95,18 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      <Route
+        path="/price-checker"
+        element={
+          <ProtectedRoute allowedRoles={['customer', 'admin', 'manager', 'staff']}>
+            <PriceCheckerPage />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin', 'manager', 'accountant', 'sales_manager', 'sales_rep', 'warehouse_staff', 'production_staff', 'staff']}>
             <AppLayout />
           </ProtectedRoute>
         }
@@ -100,6 +114,7 @@ function App() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/products" element={<ProductsPage />} />
+        <Route path="/wholesale-prices" element={<WholesalePricesPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/brands" element={<BrandsPage />} />
         <Route path="/customers" element={<CustomersPage />} />
@@ -113,7 +128,9 @@ function App() {
         <Route path="/stock/transfer" element={<StockTransferPage />} />
         <Route path="/stock/adjustment" element={<StockAdjustmentPage />} />
         <Route path="/stock/movements" element={<StockMovementsPage />} />
+        <Route path="/damages" element={<DamagesPage />} />
         <Route path="/suppliers" element={<SuppliersPage />} />
+        <Route path="/supplier-returns" element={<SupplierReturnsPage />} />
         <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
         <Route path="/purchase-orders/new" element={<PurchaseOrderFormPage />} />
         <Route path="/purchase-orders/:id" element={<PurchaseOrderDetailPage />} />
@@ -121,10 +138,14 @@ function App() {
         <Route path="/invoices/new" element={<InvoiceFormPage />} />
         <Route path="/invoices/from-sales-order" element={<InvoiceFromSalesOrderPage />} />
         <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+        <Route path="/grns" element={<GrnsPage />} />
         <Route path="/bills" element={<BillsPage />} />
         <Route path="/bills/from-grn" element={<BillFromGrnPage />} />
         <Route path="/bills/:id" element={<BillDetailPage />} />
         <Route path="/payments" element={<PaymentsPage />} />
+        <Route path="/cheques" element={<ChequesPage />} />
+        <Route path="/bank-accounts" element={<BankAccountsPage />} />
+        <Route path="/fund-transfers" element={<FundTransfersPage />} />
         <Route path="/payments/new" element={<PaymentFormPage />} />
         <Route path="/payments/:id" element={<PaymentDetailPage />} />
         <Route path="/boms" element={<BomsPage />} />
@@ -139,10 +160,8 @@ function App() {
         <Route path="/returns/:id" element={<ReturnDetailPage />} />
         <Route path="/credit-notes" element={<CreditNotesPage />} />
         <Route path="/credit-notes/:id" element={<CreditNoteDetailPage />} />
-        <Route path="/damages" element={<DamagesPage />} />
         <Route path="/pos" element={<PosPage />} />
 
-        <Route path="/supplier-returns" element={<SupplierReturnsPage />} />
         <Route path="/supplier-returns/:id" element={<SupplierReturnDetailPage />} />
         <Route path="/repairs" element={<RepairsPage />} />
         <Route path="/repairs/:id" element={<RepairDetailPage />} />
@@ -180,15 +199,6 @@ function App() {
           element={<ProtectedRoute allowedRoles={['admin']}><RolesPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/settings" element={<ProfilePage />} />
-        <Route
-          path="/users"
-          element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <ComingSoonPage pageName="Users" />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/settings" element={<ComingSoonPage pageName="Settings" />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

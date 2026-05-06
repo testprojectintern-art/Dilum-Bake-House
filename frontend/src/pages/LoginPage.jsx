@@ -32,7 +32,11 @@ export default function LoginPage() {
             const { token, ...user } = response.data;
             login(user, token);
             toast.success(`Welcome back, ${user.firstName}!`);
-            navigate('/dashboard');
+            if (user.role === 'customer') {
+                navigate('/price-checker');
+            } else {
+                navigate('/dashboard');
+            }
         },
         onError: (error) => {
             const message = error.response?.data?.message || 'Login failed';
@@ -42,7 +46,8 @@ export default function LoginPage() {
 
     // Already logged in? Go to dashboard
     if (isAuthenticated) {
-        return <Navigate to="/dashboard" replace />;
+        const user = useAuthStore.getState().user;
+        return <Navigate to={user?.role === 'customer' ? '/price-checker' : '/dashboard'} replace />;
     }
 
     const onSubmit = (data) => {

@@ -94,32 +94,31 @@ export const createInvoice = asyncHandler(async (req, res) => {
 });
 
 /**
- * POST /api/invoices/from-sales-order
- * Generate an invoice from one or more delivered sales orders
+ * Core Logic: Generate an invoice from one or more delivered/approved sales orders
  */
-export const createFromSalesOrder = asyncHandler(async (req, res) => {
-    const { salesOrderIds, invoiceDate, invoiceType = 'standard', notes } = req.body;
-
+export const generateInvoiceFromOrders = async ({
+    salesOrderIds,
+    invoiceDate,
+    invoiceType = 'standard',
+    notes,
+    createdBy,
+    status = 'approved',
+    session,
+}) => {
     const orders = await SalesOrder.find({
         _id: { $in: salesOrderIds },
-        status: { $in: ['delivered', 'completed'] },
-    }).populate('customerId');
+        // POS orders might be 'approved' but not yet 'delivered' in the system sense, 
+        // but for POS they are effectively delivered.
+        status: { $in: ['approved', 'dispatched', 'delivered', 'completed'] },
+    }).populate('customerId').session(session || null);
 
     if (orders.length === 0) {
-        res.status(400);
-        throw new Error('No delivered orders found for the given IDs');
-    }
-
-    // Check all orders belong to same customer
-    const customerIds = [...new Set(orders.map((o) => o.customerId._id.toString()))];
-    if (customerIds.length > 1) {
-        res.status(400);
-        throw new Error('All sales orders must belong to the same customer');
+        throw new Error('No valid orders found for invoicing');
     }
 
     const customer = orders[0].customerId;
 
-    // Merge line items from all orders
+    // Merge line items
     const invoiceItems = [];
     orders.forEach((order) => {
         order.items.forEach((orderItem) => {
@@ -141,7 +140,6 @@ export const createFromSalesOrder = asyncHandler(async (req, res) => {
         });
     });
 
-    // Due date from customer terms
     const d = new Date(invoiceDate || Date.now());
     if (customer.paymentTerms?.type === 'credit') {
         d.setDate(d.getDate() + (customer.paymentTerms.creditDays || 0));
@@ -169,27 +167,47 @@ export const createFromSalesOrder = asyncHandler(async (req, res) => {
         },
         items: invoiceItems,
         notes,
-        status: 'approved',
-        createdBy: req.user._id,
+        status,
+        createdBy,
     });
 
-    await invoice.save();
+    await invoice.save({ session: session || undefined });
 
-    // Update sales orders to "invoiced" or "completed"
+    // Update sales orders to "invoiced"
     for (const order of orders) {
-        if (order.status === 'delivered') {
-            order.status = 'invoiced';
-            await order.save();
-        }
+        order.status = 'invoiced';
+        await order.save({ session: session || undefined });
     }
 
-    await updateCustomerBalance(customer._id);
+    await updateCustomerBalance(customer._id, session);
+    return invoice;
+};
 
-    const populated = await Invoice.findById(invoice._id)
-        .populate('customerId', 'displayName customerCode')
-        .populate('salesOrderIds', 'orderNumber');
+/**
+ * POST /api/invoices/from-sales-order
+ * Generate an invoice from one or more delivered sales orders
+ */
+export const createFromSalesOrder = asyncHandler(async (req, res) => {
+    const { salesOrderIds, invoiceDate, invoiceType = 'standard', notes } = req.body;
 
-    res.status(201).json({ success: true, data: populated });
+    try {
+        const invoice = await generateInvoiceFromOrders({
+            salesOrderIds,
+            invoiceDate,
+            invoiceType,
+            notes,
+            createdBy: req.user._id,
+        });
+
+        const populated = await Invoice.findById(invoice._id)
+            .populate('customerId', 'displayName customerCode')
+            .populate('salesOrderIds', 'orderNumber');
+
+        res.status(201).json({ success: true, data: populated });
+    } catch (err) {
+        res.status(400);
+        throw new Error(err.message);
+    }
 });
 
 /**

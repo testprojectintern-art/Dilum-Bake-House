@@ -5,7 +5,7 @@ import { purchaseOrdersApi, grnsApi } from './purchaseOrdersApi';
 export const usePurchaseOrders = (filters = {}) => useQuery({
     queryKey: ['purchaseOrders', filters],
     queryFn: () => purchaseOrdersApi.list(filters),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
 });
 
 export const usePurchaseOrder = (id) => useQuery({
@@ -58,3 +58,15 @@ export const useGrns = (filters = {}) => useQuery({
     queryKey: ['grns', filters],
     queryFn: () => grnsApi.list(filters),
 });
+
+export const useDeletePurchaseOrder = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: purchaseOrdersApi.delete,
+        onSuccess: (data) => {
+            qc.invalidateQueries({ queryKey: ['purchaseOrders'] });
+            toast.success(data.message || 'PO deleted');
+        },
+        onError: (err) => toast.error(err.response?.data?.message || 'Failed to delete PO'),
+    });
+};

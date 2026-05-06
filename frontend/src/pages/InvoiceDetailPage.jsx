@@ -31,6 +31,16 @@ export default function InvoiceDetailPage() {
     const changeStatus = useChangeInvoiceStatus();
     const inv = data?.data;
 
+    // Fetch payments allocated to this invoice
+    const { data: paymentsData } = useQuery({
+        queryKey: ['paymentsForInvoice', inv?._id],
+        queryFn: () => paymentsApi.list({
+            documentId: inv?._id,
+            limit: 50,
+        }),
+        enabled: !!inv?._id,
+    });
+
     const printRef = useRef();
 
     const fmt = (n) => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 2 }).format(n || 0);
@@ -54,15 +64,6 @@ export default function InvoiceDetailPage() {
         setAction(null); setReason('');
     };
 
-    // Fetch payments allocated to this invoice
-    const { data: paymentsData } = useQuery({
-        queryKey: ['paymentsForInvoice', invoice?._id],
-        queryFn: () => paymentsApi.list({
-            documentId: invoice._id,
-            limit: 50,
-        }),
-        enabled: !!invoice?._id,
-    });
 
     const payments = paymentsData?.data || [];
 
@@ -180,6 +181,35 @@ export default function InvoiceDetailPage() {
                             </tbody>
                         </table>
                     </Card>
+                    
+                    {payments.length > 0 && (
+                        <Card>
+                            <div className="px-6 py-4 border-b flex items-center justify-between">
+                                <h3 className="text-sm font-semibold text-gray-700">Payment History</h3>
+                                <Badge variant="success">{payments.length} Payments</Badge>
+                            </div>
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b">
+                                    <tr>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Date</th>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Method</th>
+                                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Ref #</th>
+                                        <th className="px-4 py-2 text-right text-xs font-semibold text-gray-600">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                    {payments.map((p) => (
+                                        <tr key={p._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/payments/${p._id}`)}>
+                                            <td className="px-4 py-3 text-sm">{fmtDate(p.paymentDate)}</td>
+                                            <td className="px-4 py-3 text-sm capitalize">{p.method.replace('_', ' ')}</td>
+                                            <td className="px-4 py-3 text-sm font-mono">{p.paymentNumber}</td>
+                                            <td className="px-4 py-3 text-right text-sm font-medium text-green-600">{fmt(p.amount)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </Card>
+                    )}
 
                     {(inv.notes || inv.paymentInstructions) && (
                         <Card className="p-6">
@@ -287,7 +317,7 @@ export default function InvoiceDetailPage() {
                 <PrintableInvoice
                     ref={printRef}
                     companyInfo={companyInfo}
-                    invoice={invoice}
+                    invoice={inv}
                     payments={payments}
                 />
             </div>

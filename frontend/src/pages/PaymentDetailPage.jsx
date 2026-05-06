@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit } from 'lucide-react';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -7,6 +8,8 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsApi } from '../features/payments/paymentsApi';
+import { useDeletePayment } from '../features/payments/usePayments';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 
 export default function PaymentDetailPage() {
     const { id } = useParams();
@@ -15,7 +18,17 @@ export default function PaymentDetailPage() {
     const { data, isLoading } = useQuery({
         queryKey: ['payment', id], queryFn: () => paymentsApi.getById(id),
     });
+    const deleteMutation = useDeletePayment();
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const p = data?.data;
+
+    const handleDelete = async () => {
+        try {
+            await deleteMutation.mutateAsync(id);
+            setIsDeleteDialogOpen(false);
+            navigate('/payments');
+        } catch {}
+    };
 
     const fmt = (n) => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 2 }).format(n || 0);
     const fmtDate = (d) => new Date(d).toLocaleDateString('en-LK');
@@ -32,9 +45,27 @@ export default function PaymentDetailPage() {
                     </Badge>
                 </span>}
                 description={`${fmtDate(p.paymentDate)} · ${p.method.replace('_', ' ')}`}
-                actions={<Button variant="outline" onClick={() => navigate('/payments')}>
-                    <ArrowLeft size={16} className="mr-1.5" /> Back
-                </Button>}
+                actions={
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => navigate('/payments')}>
+                            <ArrowLeft size={16} className="mr-1.5" /> Back
+                        </Button>
+                        <Button variant="danger" onClick={() => setIsDeleteDialogOpen(true)} loading={deleteMutation.isPending}>
+                            <Trash2 size={16} className="mr-1.5" /> Delete
+                        </Button>
+                    </div>
+                }
+            />
+
+            <ConfirmDialog 
+                isOpen={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                onConfirm={handleDelete}
+                title="Delete Payment"
+                message="Are you sure you want to delete this payment? This action will reverse all invoice/bill allocations and restore bank account balances. This cannot be undone."
+                confirmText="Yes, Delete Payment"
+                variant="danger"
+                loading={deleteMutation.isPending}
             />
 
             <div className="grid grid-cols-3 gap-6">
@@ -52,7 +83,15 @@ export default function PaymentDetailPage() {
                                 <p className="capitalize">{p.method.replace('_', ' ')}</p>
                                 {p.chequeNumber && <p className="text-gray-600">Cheque: {p.chequeNumber} ({fmtDate(p.chequeDate)})</p>}
                                 {p.bankName && <p className="text-gray-600">Bank: {p.bankName}</p>}
-                                {p.transactionReference && <p className="text-gray-600">Ref: {p.transactionReference}</p>}
+                                {p.bankAccountId && (
+                                    <button 
+                                        onClick={() => navigate('/bank-accounts')}
+                                        className="text-primary-600 hover:underline flex items-center gap-1 mt-1"
+                                    >
+                                        Linked: {p.bankAccountId.accountName}
+                                    </button>
+                                )}
+                                {p.transactionReference && <p className="text-gray-600 mt-1">Ref: {p.transactionReference}</p>}
                             </div>
                         </div>
                         {p.notes && <div className="mt-4 pt-4 border-t"><p className="text-sm whitespace-pre-wrap">{p.notes}</p></div>}

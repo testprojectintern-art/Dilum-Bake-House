@@ -21,7 +21,7 @@ export const useUpdateDesignation = () => { const qc = useQueryClient(); return 
 export const useDeleteDesignation = () => { const qc = useQueryClient(); return useMutation({ mutationFn: designationsApi.delete, onSuccess: () => { invalidate(qc, ['designations'])(); toast.success('Deleted'); }, onError: onErr }); };
 
 // Employees
-export const useEmployees = (filters = {}) => useQuery({ queryKey: ['employees', filters], queryFn: () => employeesApi.list(filters), keepPreviousData: true });
+export const useEmployees = (filters = {}) => useQuery({ queryKey: ['employees', filters], queryFn: () => employeesApi.list(filters), placeholderData: (prev) => prev });
 export const useEmployee = (id) => useQuery({ queryKey: ['employee', id], queryFn: () => employeesApi.getById(id), enabled: !!id });
 export const useCreateEmployee = () => { const qc = useQueryClient(); return useMutation({ mutationFn: employeesApi.create, onSuccess: () => { invalidate(qc, ['employees'])(); toast.success('Employee added'); }, onError: onErr }); };
 export const useUpdateEmployee = () => { const qc = useQueryClient(); return useMutation({ mutationFn: ({ id, data }) => employeesApi.update(id, data), onSuccess: () => { invalidate(qc, ['employees', 'employee'])(); toast.success('Updated'); }, onError: onErr }); };
@@ -34,12 +34,12 @@ export const useUpdateShift = () => { const qc = useQueryClient(); return useMut
 export const useDeleteShift = () => { const qc = useQueryClient(); return useMutation({ mutationFn: shiftsApi.delete, onSuccess: () => { invalidate(qc, ['shifts'])(); toast.success('Deleted'); }, onError: onErr }); };
 
 // Attendance
-export const useAttendance = (filters = {}) => useQuery({ queryKey: ['attendance', filters], queryFn: () => attendanceApi.list(filters), keepPreviousData: true });
+export const useAttendance = (filters = {}) => useQuery({ queryKey: ['attendance', filters], queryFn: () => attendanceApi.list(filters), placeholderData: (prev) => prev });
 export const useMarkAttendance = () => { const qc = useQueryClient(); return useMutation({ mutationFn: attendanceApi.mark, onSuccess: () => { invalidate(qc, ['attendance'])(); toast.success('Marked'); }, onError: onErr }); };
 export const useBulkMarkAttendance = () => { const qc = useQueryClient(); return useMutation({ mutationFn: attendanceApi.bulkMark, onSuccess: (r) => { invalidate(qc, ['attendance'])(); toast.success(`Marked ${r.count} records`); }, onError: onErr }); };
 
 // Leaves
-export const useLeaves = (filters = {}) => useQuery({ queryKey: ['leaves', filters], queryFn: () => leavesApi.list(filters), keepPreviousData: true });
+export const useLeaves = (filters = {}) => useQuery({ queryKey: ['leaves', filters], queryFn: () => leavesApi.list(filters), placeholderData: (prev) => prev });
 export const useCreateLeave = () => { const qc = useQueryClient(); return useMutation({ mutationFn: leavesApi.create, onSuccess: (r) => { invalidate(qc, ['leaves'])(); toast.success('Leave request submitted'); if (r.warning) toast(r.warning, { icon: '⚠️' }); }, onError: onErr }); };
 export const useLeaveActions = () => {
     const qc = useQueryClient();

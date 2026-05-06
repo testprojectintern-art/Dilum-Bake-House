@@ -16,7 +16,9 @@ export const productFormSchema = z.object({
     brandId: z.string().optional().or(z.literal('')),
     type: z.enum(['manufactured', 'trading', 'service', 'bundle']),
     unitOfMeasure: z.string().min(1, 'Unit of measure is required'),
-    basePrice: z.coerce.number().min(0, 'Price must be 0 or greater'),
+    basePrice: z.coerce.number().min(0, 'Selling Price must be 0 or greater'),
+    buyingPrice: z.coerce.number().min(0, 'Buying Price must be 0 or greater').optional(),
+    profitPercentage: z.coerce.number().optional(),
     mrp: z.coerce.number().min(0).optional(),
     taxRate: z.coerce.number().min(0).max(100).optional(),
     taxable: z.boolean().optional(),
@@ -31,6 +33,12 @@ export const productFormSchema = z.object({
     allowBackorder: z.boolean().optional(),
     status: z.enum(['active', 'inactive', 'draft', 'discontinued']),
     notes: z.string().max(1000).optional().or(z.literal('')),
+    tierPricing: z.array(z.object({
+        tierName: z.string().optional().or(z.literal('')),
+        minQuantity: z.coerce.number().min(0),
+        maxQuantity: z.coerce.number().optional().nullable(),
+        price: z.coerce.number().min(0),
+    })).optional(),
 });
 
 export const categoryFormSchema = z.object({

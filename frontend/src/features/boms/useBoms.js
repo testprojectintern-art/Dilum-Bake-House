@@ -5,7 +5,7 @@ import { bomsApi } from './bomsApi';
 export const useBoms = (filters = {}) => useQuery({
     queryKey: ['boms', filters],
     queryFn: () => bomsApi.list(filters),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
 });
 
 export const useBom = (id) => useQuery({

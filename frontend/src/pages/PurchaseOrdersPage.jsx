@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Eye, ShoppingBag } from 'lucide-react';
+import { Plus, Search, Eye, ShoppingBag, Trash2, Edit } from 'lucide-react';
 
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -10,7 +10,7 @@ import Table from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
 import Pagination from '../components/ui/Pagination';
 import EmptyState from '../components/ui/EmptyState';
-import { usePurchaseOrders } from '../features/purchaseOrders/usePurchaseOrders';
+import { usePurchaseOrders, useDeletePurchaseOrder } from '../features/purchaseOrders/usePurchaseOrders';
 import { useAuthStore } from '../store/authStore';
 
 const statusVariant = {
@@ -31,6 +31,7 @@ export default function PurchaseOrdersPage() {
 
     const [filters, setFilters] = useState({ search: '', status: '', page: 1, limit: 10 });
     const { data, isLoading } = usePurchaseOrders(filters);
+    const deleteMutation = useDeletePurchaseOrder();
 
     const orders = data?.data || [];
     const total = data?.total || 0;
@@ -67,12 +68,27 @@ export default function PurchaseOrdersPage() {
         },
         { key: 'status', label: 'Status', render: (r) => <Badge variant={statusVariant[r.status]}>{r.status.replace('_', ' ')}</Badge> },
         {
-            key: 'actions', label: '', width: '60px',
+            key: 'actions', label: '', width: '120px',
             render: (r) => (
-                <button onClick={(e) => { e.stopPropagation(); navigate(`/purchase-orders/${r._id}`); }}
-                    className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded" title="View">
-                    <Eye size={16} />
-                </button>
+                <div className="flex gap-1 justify-end">
+                    <button onClick={(e) => { e.stopPropagation(); navigate(`/purchase-orders/${r._id}`); }}
+                        className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded" title="View">
+                        <Eye size={16} />
+                    </button>
+                    {(r.status === 'draft' || r.status === 'pending_approval') && (
+                        <button onClick={(e) => { e.stopPropagation(); navigate(`/purchase-orders/${r._id}/edit`); }}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Edit">
+                            <Edit size={16} />
+                        </button>
+                    )}
+                    {r.status === 'draft' && (
+                        <button onClick={(e) => { e.stopPropagation(); if(window.confirm('Delete this draft PO?')) deleteMutation.mutate(r._id) }}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded" title="Delete"
+                            disabled={deleteMutation.isPending}>
+                            <Trash2 size={16} />
+                        </button>
+                    )}
+                </div>
             ),
         },
     ];

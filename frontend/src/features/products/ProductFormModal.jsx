@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import Modal from '../../components/ui/Modal';
@@ -13,6 +13,7 @@ import { useCategories, useBrands, useUoms, useCreateProduct, useUpdateProduct }
 const tabs = [
     { id: 'basic', label: 'Basic Info' },
     { id: 'pricing', label: 'Pricing & Tax' },
+    { id: 'tiers', label: 'Wholesale Tiers' },
     { id: 'stock', label: 'Stock & Packaging' },
     { id: 'sales', label: 'Sales Config' },
 ];
@@ -31,6 +32,9 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
         register,
         handleSubmit,
         reset,
+        watch,
+        setValue,
+        control,
         formState: { errors },
     } = useForm({
         resolver: zodResolver(productFormSchema),
@@ -42,7 +46,16 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
             sellable: true,
             allowBackorder: false,
             minimumOrderQuantity: 1,
+            buyingPrice: 0,
+            profitPercentage: 0,
+            basePrice: 0,
+            tierPricing: [],
         },
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: 'tierPricing',
     });
 
     // When opening in edit mode, populate form
@@ -76,6 +89,11 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
                 sellable: product.salesConfig?.sellable ?? true,
                 allowBackorder: product.salesConfig?.allowBackorder ?? false,
                 status: product.status || 'active',
+                buyingPrice: product.costs?.standardCost || 0,
+                profitPercentage: product.costs?.standardCost && product.costs.standardCost > 0 && product.basePrice 
+                    ? ((product.basePrice - product.costs.standardCost) / product.costs.standardCost * 100).toFixed(2) 
+                    : 0,
+                tierPricing: product.tierPricing || [],
                 notes: product.notes || '',
             });
         } else if (isOpen && !product) {
@@ -88,6 +106,10 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
                 sellable: true,
                 allowBackorder: false,
                 minimumOrderQuantity: 1,
+                buyingPrice: 0,
+                profitPercentage: 0,
+                basePrice: 0,
+                tierPricing: [],
             });
         }
         setActiveTab('basic');
@@ -111,6 +133,10 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
             unitOfMeasure: data.unitOfMeasure,
             basePrice: data.basePrice,
             mrp: data.mrp || undefined,
+            costs: {
+                ...(product?.costs || {}),
+                standardCost: data.buyingPrice || 0,
+            },
             tax: {
                 taxable: data.taxable,
                 taxRate: data.taxRate || 0,
@@ -132,6 +158,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
             },
             status: data.status,
             notes: data.notes || undefined,
+            tierPricing: data.tierPricing || [],
         };
 
         try {
@@ -282,15 +309,54 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
 
                     {activeTab === 'pricing' && (
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
                                 <Input
-                                    label="Base Price (LKR)"
+                                    label="Buying Price (LKR)"
+                                    type="number"
+                                    step="0.01"
+                                    error={errors.buyingPrice?.message}
+                                    {...register('buyingPrice', {
+                                        onChange: (e) => {
+                                            const buy = parseFloat(e.target.value) || 0;
+                                            const profit = watch('profitPercentage') || 0;
+                                            const sell = buy * (1 + profit / 100);
+                                            setValue('basePrice', parseFloat(sell.toFixed(2)));
+                                        }
+                                    })}
+                                />
+                                <Input
+                                    label="Profit (%)"
+                                    type="number"
+                                    step="0.01"
+                                    error={errors.profitPercentage?.message}
+                                    {...register('profitPercentage', {
+                                        onChange: (e) => {
+                                            const profit = parseFloat(e.target.value) || 0;
+                                            const buy = watch('buyingPrice') || 0;
+                                            const sell = buy * (1 + profit / 100);
+                                            setValue('basePrice', parseFloat(sell.toFixed(2)));
+                                        }
+                                    })}
+                                />
+                                <Input
+                                    label="Selling Price (LKR)"
                                     type="number"
                                     step="0.01"
                                     required
                                     error={errors.basePrice?.message}
-                                    {...register('basePrice')}
+                                    {...register('basePrice', {
+                                        onChange: (e) => {
+                                            const sell = parseFloat(e.target.value) || 0;
+                                            const buy = watch('buyingPrice') || 0;
+                                            if (buy > 0) {
+                                                const profit = ((sell - buy) / buy) * 100;
+                                                setValue('profitPercentage', parseFloat(profit.toFixed(2)));
+                                            }
+                                        }
+                                    })}
                                 />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
                                 <Input
                                     label="MRP (LKR)"
                                     type="number"
@@ -313,6 +379,84 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
                                 />
                                 <Input label="HS Code" error={errors.hsCode?.message} {...register('hsCode')} />
                             </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'tiers' && (
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h4 className="text-sm font-semibold text-gray-700">Wholesale Price Tiers</h4>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => append({ tierName: watch('name') || '', minQuantity: 1, maxQuantity: null, price: 0 })}
+                                >
+                                    + Add Tier
+                                </Button>
+                            </div>
+
+                            {fields.length === 0 ? (
+                                <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                                    <p className="text-sm text-gray-500">No price tiers defined yet.</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead>
+                                            <tr>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tier Name</th>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Min Qty</th>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max Qty</th>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price (LKR)</th>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profit %</th>
+                                                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {fields.map((field, index) => {
+                                                const tierPrice = watch(`tierPricing.${index}.price`) || 0;
+                                                const buyingPrice = watch('buyingPrice') || 0;
+                                                const profit = buyingPrice > 0 ? ((tierPrice - buyingPrice) / buyingPrice * 100).toFixed(2) : 0;
+
+                                                return (
+                                                    <tr key={field.id}>
+                                                        <td className="px-2 py-2">
+                                                            <Input size="sm" {...register(`tierPricing.${index}.tierName`)} placeholder="e.g. Bulk 1" />
+                                                        </td>
+                                                        <td className="px-2 py-2">
+                                                            <Input type="number" size="sm" {...register(`tierPricing.${index}.minQuantity`)} />
+                                                        </td>
+                                                        <td className="px-2 py-2">
+                                                            <Input type="number" size="sm" {...register(`tierPricing.${index}.maxQuantity`)} placeholder="No limit" />
+                                                        </td>
+                                                        <td className="px-2 py-2">
+                                                            <Input type="number" size="sm" step="0.01" {...register(`tierPricing.${index}.price`)} />
+                                                        </td>
+                                                        <td className="px-3 py-2 text-sm text-gray-600 font-medium">
+                                                            <span className={profit > 0 ? 'text-green-600' : 'text-red-600'}>
+                                                                {profit}%
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-2 py-2 text-right">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => remove(index)}
+                                                                className="text-red-600 hover:text-red-800 text-sm font-medium"
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                            <p className="text-xs text-gray-500 italic">
+                                * Profit % is calculated based on the Buying Price (Standard Cost).
+                            </p>
                         </div>
                     )}
 

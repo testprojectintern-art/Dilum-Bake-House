@@ -35,9 +35,20 @@ const userSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ['admin', 'manager', 'accountant', 'sales_manager', 'sales_rep', 'warehouse_staff', 'production_staff', 'staff'],
+            enum: ['admin', 'manager', 'accountant', 'sales_manager', 'sales_rep', 'warehouse_staff', 'production_staff', 'staff', 'customer', 'inventory_admin'],
             default: 'staff',
         },
+        nic: { type: String, trim: true },
+        address: { type: String, trim: true },
+        emergencyContact: {
+            name: { type: String, trim: true },
+            relationship: { type: String, trim: true },
+            phone: { type: String, trim: true },
+        },
+        permissions: [{
+            type: String,
+            enum: ['adjust_stock', 'manage_prices', 'approve_po', 'manage_users'],
+        }],
         isActive: {
             type: Boolean,
             default: true,

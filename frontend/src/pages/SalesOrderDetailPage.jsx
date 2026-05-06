@@ -103,8 +103,8 @@ export default function SalesOrderDetailPage() {
                         </Button>
                         {actionButtons.map((btn) => (
                             <Button
-                                key={btn.status} variant={btn.variant}
-                                onClick={() => setAction(btn)}
+                                key={btn.label} variant={btn.variant}
+                                onClick={btn.onClick ? btn.onClick : () => setAction(btn)}
                             >
                                 <btn.icon size={16} className="mr-1.5" /> {btn.label}
                             </Button>

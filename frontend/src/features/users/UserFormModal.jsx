@@ -18,6 +18,8 @@ const createSchema = z.object({
     phone: z.string().optional().or(z.literal('')),
     role: z.string().min(1, 'Select a role'),
     isActive: z.boolean().optional(),
+    nic: z.string().optional().or(z.literal('')),
+    address: z.string().optional().or(z.literal('')),
 });
 
 const updateSchema = z.object({
@@ -26,6 +28,8 @@ const updateSchema = z.object({
     phone: z.string().optional().or(z.literal('')),
     role: z.string().min(1),
     isActive: z.boolean().optional(),
+    nic: z.string().optional().or(z.literal('')),
+    address: z.string().optional().or(z.literal('')),
 });
 
 export default function UserFormModal({ isOpen, onClose, user = null }) {
@@ -40,6 +44,7 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
         defaultValues: {
             firstName: '', lastName: '', email: '', password: '',
             phone: '', role: 'staff', isActive: true,
+            nic: '', address: '',
         },
     });
 
@@ -53,12 +58,15 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
                 phone: user.phone || '',
                 role: user.role || 'staff',
                 isActive: user.isActive !== false,
+                nic: user.nic || '',
+                address: user.address || '',
             });
             setSelectedRole(user.role || 'staff');
         } else if (isOpen) {
             reset({
                 firstName: '', lastName: '', email: '', password: '',
                 phone: '', role: 'staff', isActive: true,
+                nic: '', address: '',
             });
             setSelectedRole('staff');
         }
@@ -79,6 +87,8 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
                         phone: data.phone || undefined,
                         role: data.role,
                         isActive: data.isActive,
+                        nic: data.nic,
+                        address: data.address,
                     },
                 });
             } else {
@@ -89,6 +99,8 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
                     password: data.password,
                     phone: data.phone || undefined,
                     role: data.role,
+                    nic: data.nic,
+                    address: data.address,
                 });
             }
             onClose();
@@ -133,6 +145,8 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
                     )}
 
                     <Input label="Phone" type="tel" {...register('phone')} />
+                    <Input label="NIC Number" placeholder="e.g. 199012345678" {...register('nic')} />
+                    <Input label="Address" placeholder="Home or Office address" {...register('address')} />
 
                     <div>
                         <Select label="Role" required

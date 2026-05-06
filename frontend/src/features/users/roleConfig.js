@@ -49,6 +49,13 @@ export const ROLES = [
         permissions: ['manage_bom', 'run_production'],
     },
     {
+        value: 'inventory_admin',
+        label: 'Inventory Admin',
+        description: 'Exclusive access to adjust stock levels and manage catalog',
+        color: '#b91c1c',
+        permissions: ['adjust_stock', 'manage_stock', 'manage_products'],
+    },
+    {
         value: 'staff',
         label: 'Staff',
         description: 'View-only access to most modules',

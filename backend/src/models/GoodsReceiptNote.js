@@ -34,8 +34,8 @@ const grnLineItemSchema = new mongoose.Schema({
 const grnSchema = new mongoose.Schema({
     grnNumber: { type: String, unique: true, trim: true, uppercase: true },
 
-    purchaseOrderId: { type: mongoose.Schema.Types.ObjectId, ref: 'PurchaseOrder', required: true },
-    poNumber: String, // denormalized
+    purchaseOrderId: { type: mongoose.Schema.Types.ObjectId, ref: 'PurchaseOrder', required: false },
+    poNumber: { type: String, required: false }, // denormalized
     supplierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier', required: true },
     supplierName: String,
 

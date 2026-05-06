@@ -5,7 +5,7 @@ import { suppliersApi } from './suppliersApi';
 export const useSuppliers = (filters = {}) => useQuery({
     queryKey: ['suppliers', filters],
     queryFn: () => suppliersApi.list(filters),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
 });
 
 export const useSupplier = (id) => useQuery({

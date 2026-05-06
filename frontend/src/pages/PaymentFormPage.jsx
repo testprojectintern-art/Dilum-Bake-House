@@ -17,6 +17,7 @@ import { suppliersApi } from '../features/suppliers/suppliersApi';
 import { invoicesApi } from '../features/invoices/invoicesApi';
 import { billsApi } from '../features/bills/billsApi';
 import { useCreatePayment } from '../features/payments/usePayments';
+import api from '../api/axios';
 
 export default function PaymentFormPage() {
     const navigate = useNavigate();
@@ -34,6 +35,7 @@ export default function PaymentFormPage() {
     const [chequeDate, setChequeDate] = useState('');
     const [bankName, setBankName] = useState('');
     const [transactionReference, setTransactionReference] = useState('');
+    const [bankAccountId, setBankAccountId] = useState('');
     const [notes, setNotes] = useState('');
     const [allocations, setAllocations] = useState([]);
 
@@ -59,6 +61,12 @@ export default function PaymentFormPage() {
         queryFn: () => billsApi.list({ supplierId, paymentStatus: 'unpaid,partially_paid,overdue', limit: 100 }),
         enabled: direction === 'paid' && !!supplierId,
     });
+    const { data: bankAccountsData } = useQuery({
+        queryKey: ['bank-accounts'],
+        queryFn: async () => (await api.get('/bank-accounts')).data
+    });
+    const bankAccounts = bankAccountsData?.data || [];
+    const bankOptions = bankAccounts.map(a => ({ value: a._id, label: `${a.accountName} (${a.bankName}) - Balance: LKR ${a.currentBalance?.toLocaleString()}` }));
 
     // Preload
     useEffect(() => {
@@ -149,6 +157,7 @@ export default function PaymentFormPage() {
                 chequeDate: method === 'cheque' ? chequeDate : undefined,
                 bankName: bankName || undefined,
                 transactionReference: transactionReference || undefined,
+                bankAccountId: bankAccountId || undefined,
                 allocations: allocations.filter((a) => a.amount > 0),
                 notes: notes || undefined,
             });
@@ -211,6 +220,17 @@ export default function PaymentFormPage() {
                                     <Input label="Cheque Number" value={chequeNumber} onChange={(e) => setChequeNumber(e.target.value)} />
                                     <Input label="Cheque Date" type="date" value={chequeDate} onChange={(e) => setChequeDate(e.target.value)} />
                                 </div>
+                            )}
+
+                            {(method === 'bank_transfer' || method === 'card' || method === 'mobile_wallet') && (
+                                <Select 
+                                    label="Select Bank Account" 
+                                    required 
+                                    placeholder="Choose account to update balance..."
+                                    options={bankOptions} 
+                                    value={bankAccountId} 
+                                    onChange={(e) => setBankAccountId(e.target.value)} 
+                                />
                             )}
 
                             <div className="grid grid-cols-2 gap-4">

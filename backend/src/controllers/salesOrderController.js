@@ -8,6 +8,7 @@ import {
     decreaseStock, increaseStock,
 } from '../services/stockService.js';
 import StockItem from '../models/StockItem.js';
+import { generateInvoiceFromOrders } from './invoiceController.js';
 
 /**
  * Create Sales Order
@@ -124,45 +125,86 @@ export const createSalesOrder = asyncHandler(async (req, res) => {
 
     const order = new SalesOrder(orderData);
 
-    // Pre-save calculates totals. We need totals to run credit check.
-    // Save first with 'draft' status, then validate credit.
-    const tempStatus = orderData.status || 'draft';
-    order.status = 'draft';
-    await order.save();
+    // Use transaction for stock and invoice
+    const session = await mongoose.startSession();
+    try {
+        await session.withTransaction(async () => {
+            const tempStatus = orderData.status || 'draft';
+            order.status = 'draft';
+            await order.save({ session });
 
-    // Credit check for credit-term customers
-    if (customer.paymentTerms?.type === 'credit') {
-        const available = customer.creditStatus?.availableCredit || 0;
-        const required = order.grandTotal;
-        const passed = required <= available;
+            // Credit check for credit-term customers
+            if (customer.paymentTerms?.type === 'credit') {
+                const available = customer.creditStatus?.availableCredit || 0;
+                const required = order.grandTotal;
+                const passed = required <= available;
 
-        order.creditCheck = {
-            performed: true,
-            passed,
-            creditAvailable: available,
-            creditRequired: required,
-            overridden: false,
-        };
+                order.creditCheck = {
+                    performed: true, passed,
+                    creditAvailable: available, creditRequired: required,
+                    overridden: false,
+                };
 
-        if (!passed) {
-            if (creditOverride && ['admin', 'manager', 'accountant'].includes(req.user.role)) {
-                order.creditCheck.overridden = true;
-                order.creditCheck.overrideReason = creditOverrideReason;
-                order.creditCheck.overrideBy = req.user._id;
-                order.status = tempStatus;
+                if (!passed) {
+                    if (creditOverride && ['admin', 'manager', 'accountant'].includes(req.user.role)) {
+                        order.creditCheck.overridden = true;
+                        order.creditCheck.overrideReason = creditOverrideReason;
+                        order.creditCheck.overrideBy = req.user._id;
+                        order.status = tempStatus;
+                    } else {
+                        order.status = 'pending_approval';
+                        order.holdReason = `Exceeds credit limit. Required: ${required}, Available: ${available}`;
+                        order.isOnHold = true;
+                    }
+                } else {
+                    order.status = tempStatus;
+                }
             } else {
-                order.status = 'pending_approval';
-                order.holdReason = `Exceeds credit limit. Required: ${required}, Available: ${available}`;
-                order.isOnHold = true;
+                order.status = tempStatus;
             }
-        } else {
-            order.status = tempStatus;
-        }
 
-        await order.save();
-    } else {
-        order.status = tempStatus;
-        await order.save();
+            // Deduct stock if approved (common for POS)
+            if (order.status === 'approved') {
+                for (const item of order.items) {
+                    const stockItem = await StockItem.findOne({
+                        productId: item.productId,
+                        warehouseId: warehouse._id,
+                        batchNumber: null,
+                    }).session(session);
+
+                    if (!stockItem || stockItem.quantities.onHand < item.orderedQuantity) {
+                        throw new Error(`Insufficient stock for "${item.productName}"`);
+                    }
+
+                    await decreaseStock({
+                        productId: item.productId, warehouseId: warehouse._id,
+                        quantity: item.orderedQuantity, movementType: 'sale_dispatch',
+                        sourceDocument: { type: 'sales_order', id: order._id, number: order.orderNumber },
+                        reason: 'Order created as approved', userId: req.user._id, session,
+                    });
+                    item.dispatchedQuantity = item.orderedQuantity;
+                    item.lineStatus = 'dispatched';
+                }
+                order.approvedBy = req.user._id;
+                order.approvedAt = new Date();
+            }
+
+            await order.save({ session });
+
+            // AUTO-INVOICE for POS
+            if (order.source === 'pos' && order.status === 'approved') {
+                await generateInvoiceFromOrders({
+                    salesOrderIds: [order._id],
+                    createdBy: req.user._id,
+                    session,
+                });
+            }
+        });
+    } catch (err) {
+        res.status(400);
+        throw new Error(err.message);
+    } finally {
+        session.endSession();
     }
 
     const populated = await SalesOrder.findById(order._id)
