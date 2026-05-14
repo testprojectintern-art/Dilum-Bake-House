@@ -24,6 +24,9 @@ const lineItemSchema = new mongoose.Schema(
             ref: 'Product',
             required: true,
         },
+        variationId: {
+            type: mongoose.Schema.Types.ObjectId,
+        },
         productCode: { type: String, trim: true }, // denormalized
         productName: { type: String, trim: true }, // denormalized
         description: { type: String, trim: true },

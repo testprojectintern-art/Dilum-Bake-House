@@ -63,6 +63,32 @@ const productSchema = new mongoose.Schema(
             default: 'trading',
         },
 
+        productNature: {
+            type: String,
+            enum: ['single', 'variable', 'combo'],
+            default: 'single',
+        },
+
+        variations: [
+            {
+                sku: String,
+                name: String,
+                barcode: String,
+                attributeName: String, // e.g., Color
+                attributeValue: String, // e.g., Red
+                price: { type: Number, min: 0 },
+                stock: { type: Number, default: 0 },
+            },
+        ],
+
+        comboItems: [
+            {
+                productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+                quantity: { type: Number, default: 1 },
+                priceContribution: { type: Number, default: 0 },
+            },
+        ],
+
         unitOfMeasure: {
             type: String,
             required: [true, 'Unit of measure is required'],

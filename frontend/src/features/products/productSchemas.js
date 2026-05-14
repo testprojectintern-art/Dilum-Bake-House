@@ -33,6 +33,21 @@ export const productFormSchema = z.object({
     allowBackorder: z.boolean().optional(),
     status: z.enum(['active', 'inactive', 'draft', 'discontinued']),
     notes: z.string().max(1000).optional().or(z.literal('')),
+    productNature: z.enum(['single', 'variable', 'combo']).optional(),
+    variations: z.array(z.object({
+        sku: z.string().optional().or(z.literal('')),
+        name: z.string().min(1, 'Name is required'),
+        barcode: z.string().optional().or(z.literal('')),
+        attributeName: z.string().optional().or(z.literal('')),
+        attributeValue: z.string().optional().or(z.literal('')),
+        price: z.coerce.number().min(0),
+        stock: z.coerce.number().optional(),
+    })).optional(),
+    comboItems: z.array(z.object({
+        productId: z.string().min(1, 'Product is required'),
+        quantity: z.coerce.number().min(1),
+        priceContribution: z.coerce.number().optional(),
+    })).optional(),
     tierPricing: z.array(z.object({
         tierName: z.string().optional().or(z.literal('')),
         minQuantity: z.coerce.number().min(0),

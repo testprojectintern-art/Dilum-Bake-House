@@ -7,6 +7,10 @@ const stockItemSchema = new mongoose.Schema(
             ref: 'Product',
             required: true,
         },
+        variationId: {
+            type: mongoose.Schema.Types.ObjectId,
+            default: null,
+        },
         productCode: { type: String, trim: true }, // denormalized
         productName: { type: String, trim: true }, // denormalized
 
@@ -41,7 +45,7 @@ const stockItemSchema = new mongoose.Schema(
 // Unique stock record per (product, warehouse, batch)
 // Using null batchNumber allows single record per product-warehouse for non-batch items
 stockItemSchema.index(
-    { productId: 1, warehouseId: 1, batchNumber: 1 },
+    { productId: 1, warehouseId: 1, batchNumber: 1, variationId: 1 },
     { unique: true }
 );
 stockItemSchema.index({ warehouseId: 1, productId: 1 });

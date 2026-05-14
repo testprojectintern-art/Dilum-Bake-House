@@ -19,6 +19,7 @@ import { stockApi } from '../features/stock/stockApi';
 import { useWarehouses } from '../features/warehouses/useWarehouses';
 import { useCategories } from '../features/products/useProducts';
 import { useCreateSalesOrder } from '../features/salesOrders/useSalesOrders';
+import { useCreateCustomer } from '../features/customers/useCustomers';
 import QuickCreateCustomerModal from '../features/customers/QuickCreateCustomerModal';
 import { useMobile } from '../hooks/useMobile';
 
@@ -37,7 +38,9 @@ export default function PosPage() {
     const [cart, setCart] = useState([]); // [{ productId, name, code, price, qty, available, taxRate, taxable }]
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('all');
+    const [customerSearch, setCustomerSearch] = useState('');
     const [orderDiscountPercent, setOrderDiscountPercent] = useState(0);
+    const createCustomer = useCreateCustomer();
 
     // Modals
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
@@ -113,6 +116,16 @@ export default function PosPage() {
         }
         return result.slice(0, 60); // limit display
     }, [products, activeCategory, searchQuery]);
+
+    const customerSuggestions = useMemo(() => {
+        if (!customerSearch || customerId) return [];
+        const q = customerSearch.toLowerCase();
+        return customers.filter(c =>
+            c.displayName?.toLowerCase().includes(q) ||
+            c.primaryContact?.phone?.includes(q) ||
+            c.customerCode?.toLowerCase().includes(q)
+        ).slice(0, 5);
+    }, [customerSearch, customers, customerId]);
 
     const selectedCustomer = customers.find((c) => c._id === customerId);
     const customerOptions = customers.map((c) => ({
@@ -221,12 +234,29 @@ export default function PosPage() {
     const fmt = (n) => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 2 }).format(n || 0);
 
     const handleCheckout = async (saveAsDraft = false) => {
-        if (!customerId) { toast.error('Select a customer'); return; }
+        let finalCustomerId = customerId;
+
+        // Auto-add customer if not selected but name typed
+        if (!finalCustomerId && customerSearch) {
+            try {
+                const newCust = await createCustomer.mutateAsync({
+                    displayName: customerSearch,
+                    customerType: 'individual',
+                    status: 'active'
+                });
+                finalCustomerId = newCust.data._id;
+            } catch (err) {
+                toast.error('Failed to auto-create customer');
+                return;
+            }
+        }
+
+        if (!finalCustomerId) { toast.error('Select or type a customer'); return; }
         if (!sourceWarehouseId) { toast.error('Select a warehouse'); return; }
         if (cart.length === 0) { toast.error('Cart is empty'); return; }
 
         const payload = {
-            customerId,
+            customerId: finalCustomerId,
             sourceWarehouseId,
             source: 'pos',
             items: cart.map((i) => ({
@@ -252,6 +282,7 @@ export default function PosPage() {
                 toast.success('Sale complete! Invoice generated automatically.');
                 setCart([]);
                 setCustomerId('');
+                setCustomerSearch('');
                 setOrderDiscountPercent(0);
                 setTaxMode('item');
                 navigate('/invoices');
@@ -273,13 +304,60 @@ export default function PosPage() {
                 </div>
 
                 <div className="flex-1 flex flex-col sm:flex-row gap-3 items-center">
-                    <div className="w-full sm:w-72 flex gap-1 items-end">
-                        <div className="flex-1">
-                            <Select placeholder="Select customer..." options={customerOptions}
-                                value={customerId} onChange={(e) => setCustomerId(e.target.value)} />
+                    <div className="w-full sm:w-72 flex gap-1 items-end relative">
+                        <div className="flex-1 relative">
+                            <input
+                                type="text"
+                                placeholder="Type customer name or phone..."
+                                className="w-full px-3 py-2.5 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none border-gray-200 shadow-sm transition-all"
+                                value={customerId ? selectedCustomer?.displayName : customerSearch}
+                                onChange={(e) => {
+                                    setCustomerSearch(e.target.value);
+                                    setCustomerId('');
+                                }}
+                            />
+                            {(customerId || customerSearch) && (
+                                <button
+                                    onClick={() => { setCustomerId(''); setCustomerSearch(''); }}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+
+                            {customerSearch && !customerId && customerSuggestions.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="p-2 text-[10px] uppercase tracking-wider font-bold text-gray-400 bg-gray-50 border-b">Suggested Customers</div>
+                                    {customerSuggestions.map(c => (
+                                        <button
+                                            key={c._id}
+                                            className="w-full text-left px-3 py-2.5 text-sm hover:bg-primary-50 transition-colors border-b last:border-0 flex flex-col"
+                                            onClick={() => {
+                                                setCustomerId(c._id);
+                                                setCustomerSearch('');
+                                            }}
+                                        >
+                                            <span className="font-bold text-gray-800">{c.displayName}</span>
+                                            <span className="text-[10px] text-gray-500 flex items-center gap-2">
+                                                {c.customerCode} • {c.primaryContact?.phone || 'No phone'}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {customerSearch && !customerId && customerSuggestions.length === 0 && (
+                                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border rounded-xl shadow-2xl p-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="flex items-center gap-2 text-primary-600">
+                                        <UserPlus size={16} />
+                                        <span className="text-xs font-bold">New Customer: "{customerSearch}"</span>
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 mt-1">Will be automatically added on checkout.</p>
+                                </div>
+                            )}
                         </div>
-                        <Button variant="outline" size="sm" onClick={() => setIsCustomerModalOpen(true)} title="Quick add">
-                            <UserPlus size={14} />
+                        <Button variant="outline" size="sm" onClick={() => setIsCustomerModalOpen(true)} title="Advanced Add" className="h-[42px]">
+                            <UserPlus size={16} />
                         </Button>
                     </div>
 

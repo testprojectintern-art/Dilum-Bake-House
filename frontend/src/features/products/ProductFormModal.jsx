@@ -8,10 +8,12 @@ import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Textarea from '../../components/ui/Textarea';
 import { productFormSchema } from './productSchemas';
-import { useCategories, useBrands, useUoms, useCreateProduct, useUpdateProduct } from './useProducts';
+import { useCategories, useBrands, useUoms, useCreateProduct, useUpdateProduct, useProducts } from './useProducts';
 
 const tabs = [
     { id: 'basic', label: 'Basic Info' },
+    { id: 'variations', label: 'Variations' },
+    { id: 'combo', label: 'Combo Items' },
     { id: 'pricing', label: 'Pricing & Tax' },
     { id: 'tiers', label: 'Wholesale Tiers' },
     { id: 'stock', label: 'Stock & Packaging' },
@@ -25,6 +27,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
     const { data: categoriesData } = useCategories();
     const { data: brandsData } = useBrands();
     const { data: uomsData } = useUoms();
+    const { data: allProductsData } = useProducts({ limit: 1000, status: 'active' });
     const createProduct = useCreateProduct();
     const updateProduct = useUpdateProduct();
 
@@ -46,6 +49,9 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
             sellable: true,
             allowBackorder: false,
             minimumOrderQuantity: 1,
+            productNature: 'single',
+            variations: [],
+            comboItems: [],
             buyingPrice: 0,
             profitPercentage: 0,
             basePrice: 0,
@@ -53,9 +59,19 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
         },
     });
 
-    const { fields, append, remove } = useFieldArray({
+    const { fields: tierFields, append: appendTier, remove: removeTier } = useFieldArray({
         control,
         name: 'tierPricing',
+    });
+
+    const { fields: variationFields, append: appendVariation, remove: removeVariation } = useFieldArray({
+        control,
+        name: 'variations',
+    });
+
+    const { fields: comboFields, append: appendCombo, remove: removeCombo } = useFieldArray({
+        control,
+        name: 'comboItems',
     });
 
     // When opening in edit mode, populate form
@@ -94,6 +110,13 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
                     ? ((product.basePrice - product.costs.standardCost) / product.costs.standardCost * 100).toFixed(2) 
                     : 0,
                 tierPricing: product.tierPricing || [],
+                productNature: product.productNature || 'single',
+                variations: product.variations || [],
+                comboItems: product.comboItems?.map(item => ({
+                    productId: item.productId?._id || item.productId,
+                    quantity: item.quantity,
+                    priceContribution: item.priceContribution
+                })) || [],
                 notes: product.notes || '',
             });
         } else if (isOpen && !product) {
@@ -110,6 +133,9 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
                 profitPercentage: 0,
                 basePrice: 0,
                 tierPricing: [],
+                productNature: 'single',
+                variations: [],
+                comboItems: [],
             });
         }
         setActiveTab('basic');
@@ -159,6 +185,9 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
             status: data.status,
             notes: data.notes || undefined,
             tierPricing: data.tierPricing || [],
+            productNature: data.productNature,
+            variations: data.productNature === 'variable' ? data.variations : [],
+            comboItems: data.productNature === 'combo' ? data.comboItems : [],
         };
 
         try {
@@ -198,20 +227,26 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
             <form onSubmit={handleSubmit(onSubmit)}>
                 {/* Tabs */}
                 <div className="border-b border-gray-200">
-                    <div className="flex gap-1 px-6">
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                type="button"
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`px-4 py-3 text-sm font-medium border-b-2 transition ${activeTab === tab.id
-                                    ? 'border-primary-600 text-primary-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                                    }`}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
+                    <div className="flex gap-1 px-6 overflow-x-auto no-scrollbar">
+                        {tabs.map((tab) => {
+                            const nature = watch('productNature');
+                            if (tab.id === 'variations' && nature !== 'variable') return null;
+                            if (tab.id === 'combo' && nature !== 'combo') return null;
+
+                            return (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`px-4 py-3 text-sm font-medium border-b-2 transition whitespace-nowrap ${activeTab === tab.id
+                                        ? 'border-primary-600 text-primary-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                        }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -221,11 +256,24 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <Input label="Product Name" required error={errors.name?.message} {...register('name')} />
+                                <Select
+                                    label="Product Nature"
+                                    required
+                                    error={errors.productNature?.message}
+                                    options={[
+                                        { value: 'single', label: 'Single Product' },
+                                        { value: 'variable', label: 'Variable Product' },
+                                        { value: 'combo', label: 'Combo Product (Bundle)' },
+                                    ]}
+                                    {...register('productNature')}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
                                 <Input label="Short Name" error={errors.shortName?.message} {...register('shortName')} />
+                                <Input label="Barcode" error={errors.barcode?.message} {...register('barcode')} />
                             </div>
                             <div className="grid grid-cols-3 gap-4">
                                 <Input label="SKU" error={errors.sku?.message} {...register('sku')} />
-                                <Input label="Barcode" error={errors.barcode?.message} {...register('barcode')} />
                                 <Select
                                     label="Type"
                                     required
@@ -304,6 +352,103 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
                             </div>
                             <Textarea label="Description" rows={3} error={errors.description?.message} {...register('description')} />
                             <Textarea label="Internal Notes" rows={2} error={errors.notes?.message} {...register('notes')} />
+                        </div>
+                    )}
+
+                    {activeTab === 'variations' && (
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h4 className="text-sm font-semibold text-gray-700">Product Variations</h4>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => appendVariation({ name: '', sku: '', price: watch('basePrice') || 0, stock: 0 })}
+                                >
+                                    + Add Variation
+                                </Button>
+                            </div>
+
+                            {variationFields.length === 0 ? (
+                                <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                                    <p className="text-sm text-gray-500">No variations added yet.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {variationFields.map((field, index) => (
+                                        <div key={field.id} className="p-4 border rounded-lg bg-white space-y-3 relative">
+                                            <button
+                                                type="button"
+                                                onClick={() => removeVariation(index)}
+                                                className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <Input label="Variation Name (e.g. Red, XL)" required error={errors.variations?.[index]?.name?.message} {...register(`variations.${index}.name`)} />
+                                                <Input label="SKU" error={errors.variations?.[index]?.sku?.message} {...register(`variations.${index}.sku`)} />
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <Input label="Barcode" error={errors.variations?.[index]?.barcode?.message} {...register(`variations.${index}.barcode`)} />
+                                                <Input label="Price" type="number" step="0.01" error={errors.variations?.[index]?.price?.message} {...register(`variations.${index}.price`)} />
+                                                <Input label="Initial Stock" type="number" error={errors.variations?.[index]?.stock?.message} {...register(`variations.${index}.stock`)} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'combo' && (
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h4 className="text-sm font-semibold text-gray-700">Combo Items (Bundle Components)</h4>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => appendCombo({ productId: '', quantity: 1, priceContribution: 0 })}
+                                >
+                                    + Add Item
+                                </Button>
+                            </div>
+
+                            {comboFields.length === 0 ? (
+                                <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                                    <p className="text-sm text-gray-500">No items added to this combo yet.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {comboFields.map((field, index) => (
+                                        <div key={field.id} className="flex gap-4 items-end bg-white p-3 border rounded-lg">
+                                            <div className="flex-1">
+                                                <Select
+                                                    label="Select Product"
+                                                    required
+                                                    error={errors.comboItems?.[index]?.productId?.message}
+                                                    options={(allProductsData?.data || []).map(p => ({ value: p._id, label: `${p.name} (${p.productCode})` }))}
+                                                    {...register(`comboItems.${index}.productId`)}
+                                                />
+                                            </div>
+                                            <div className="w-24">
+                                                <Input label="Qty" type="number" required error={errors.comboItems?.[index]?.quantity?.message} {...register(`comboItems.${index}.quantity`)} />
+                                            </div>
+                                            <div className="w-32">
+                                                <Input label="Price Contr." type="number" step="0.01" error={errors.comboItems?.[index]?.priceContribution?.message} {...register(`comboItems.${index}.priceContribution`)} />
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="text-red-500 border-red-200 hover:bg-red-50"
+                                                onClick={() => removeCombo(index)}
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -390,13 +535,13 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => append({ tierName: watch('name') || '', minQuantity: 1, maxQuantity: null, price: 0 })}
+                                    onClick={() => appendTier({ tierName: watch('name') || '', minQuantity: 1, maxQuantity: null, price: 0 })}
                                 >
                                     + Add Tier
                                 </Button>
                             </div>
 
-                            {fields.length === 0 ? (
+                            {tierFields.length === 0 ? (
                                 <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                                     <p className="text-sm text-gray-500">No price tiers defined yet.</p>
                                 </div>
@@ -414,7 +559,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {fields.map((field, index) => {
+                                            {tierFields.map((field, index) => {
                                                 const tierPrice = watch(`tierPricing.${index}.price`) || 0;
                                                 const buyingPrice = watch('buyingPrice') || 0;
                                                 const profit = buyingPrice > 0 ? ((tierPrice - buyingPrice) / buyingPrice * 100).toFixed(2) : 0;
@@ -441,7 +586,7 @@ export default function ProductFormModal({ isOpen, onClose, product = null }) {
                                                         <td className="px-2 py-2 text-right">
                                                             <button
                                                                 type="button"
-                                                                onClick={() => remove(index)}
+                                                                onClick={() => removeTier(index)}
                                                                 className="text-red-600 hover:text-red-800 text-sm font-medium"
                                                             >
                                                                 Remove
