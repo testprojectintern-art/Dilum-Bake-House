@@ -18,6 +18,7 @@ import WholesalePricesPage from './pages/WholesalePricesPage';
 import ChequesPage from './pages/ChequesPage';
 import BankAccountsPage from './pages/BankAccountsPage';
 import FundTransfersPage from './pages/FundTransfersPage';
+import ExpensesPage from './pages/ExpensesPage';
 import WarehousesPage from './pages/WarehousesPage';
 import StockPage from './pages/StockPage';
 import OpeningStockPage from './pages/OpeningStockPage';
@@ -157,6 +158,7 @@ function App() {
         <Route path="/cheques" element={<ChequesPage />} />
         <Route path="/bank-accounts" element={<BankAccountsPage />} />
         <Route path="/fund-transfers" element={<FundTransfersPage />} />
+        <Route path="/expenses" element={<ExpensesPage />} />
         <Route path="/payments/new" element={<PaymentFormPage />} />
         <Route path="/payments/:id" element={<PaymentDetailPage />} />
         <Route path="/boms" element={<BomsPage />} />

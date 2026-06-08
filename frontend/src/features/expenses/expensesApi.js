@@ -1,4 +1,4 @@
-import api from '../../lib/api';
+import api from '../../api/axios';
 
 export const expensesApi = {
     create: async (data) => {

@@ -71,6 +71,7 @@ const menuItems = [
         icon: Landmark,
         children: [
             { label: 'Bank Accounts', path: '/bank-accounts' },
+            { label: 'Expenses', path: '/expenses' },
             { label: 'Fund Transfers', path: '/fund-transfers' },
             { label: 'Cheque Registry', path: '/cheques' },
             { label: 'Credit Notes', path: '/credit-notes' },
