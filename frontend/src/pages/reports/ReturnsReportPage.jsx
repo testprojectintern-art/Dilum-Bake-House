@@ -34,9 +34,9 @@ export default function ReturnsReportPage() {
                 </Button>} />
 
             <Card className="p-4 mb-4">
-                <div className="flex gap-3">
-                    <div className="w-40"><Input label="From" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
-                    <div className="w-40"><Input label="To" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
+                <div className="flex flex-wrap gap-3">
+                    <div className="w-full sm:w-40"><Input label="From" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+                    <div className="w-full sm:w-40"><Input label="To" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
                 </div>
             </Card>
 

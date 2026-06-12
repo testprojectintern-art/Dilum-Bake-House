@@ -55,8 +55,8 @@ export default function SlowFastMoversReportPage() {
                 </Button>} />
 
             <Card className="p-4 mb-4">
-                <div className="flex gap-3 items-end">
-                    <div className="w-36">
+                <div className="flex flex-wrap gap-3 items-end">
+                    <div className="w-full sm:w-36">
                         <Input label="Period (days)" type="number" min="7" max="365" value={days}
                             onChange={(e) => setDays(e.target.value)} />
                     </div>

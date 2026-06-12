@@ -90,13 +90,13 @@ export default function SalesByProductReportPage() {
 
             <Card className="p-4 mb-4">
                 <div className="flex flex-wrap items-end gap-3">
-                    <div className="w-40">
+                    <div className="w-full sm:w-40">
                         <Input label="From" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
                     </div>
-                    <div className="w-40">
+                    <div className="w-full sm:w-40">
                         <Input label="To" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                     </div>
-                    <div className="flex flex-wrap gap-1 ml-auto">
+                    <div className="w-full sm:w-auto flex flex-wrap gap-1 sm:ml-auto">
                         <Button variant="outline" size="sm" onClick={() => applyPreset('today')}>Today</Button>
                         <Button variant="outline" size="sm" onClick={() => applyPreset('yesterday')}>Yesterday</Button>
                         <Button variant="outline" size="sm" onClick={() => applyPreset(7)}>Last 7d</Button>
