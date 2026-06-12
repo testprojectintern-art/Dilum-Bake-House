@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
+import Employee from '../models/Employee.js';
 import generateToken from '../utils/generateToken.js';
 
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -11,7 +12,7 @@ const LOCK_TIME_MINUTES = 15;
  * @access  Public for first user (becomes admin), then Admin-only
  */
 export const register = asyncHandler(async (req, res) => {
-    const { firstName, lastName, email, phone, password, role } = req.body;
+    const { firstName, lastName, email, phone, password, role, nic, address, createEmployee } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
@@ -24,15 +25,20 @@ export const register = asyncHandler(async (req, res) => {
     const userCount = await User.countDocuments();
     const isFirstUser = userCount === 0;
 
-    // Only admins can create other users (after first user)
+    // Only admins/managers can create other users (after first user)
     if (!isFirstUser) {
         if (!req.user) {
             res.status(401);
-            throw new Error('Not authorized. Only existing admins can register new users.');
+            throw new Error('Not authorized. Only admins or managers can register new users.');
         }
-        if (req.user.role !== 'admin') {
+        if (!['admin', 'manager'].includes(req.user.role)) {
             res.status(403);
-            throw new Error('Only admins can register new users');
+            throw new Error('Only admins or managers can register new users');
+        }
+        // Managers cannot create admin accounts
+        if (req.user.role === 'manager' && role === 'admin') {
+            res.status(403);
+            throw new Error('Managers cannot create admin accounts');
         }
     }
 
@@ -42,16 +48,39 @@ export const register = asyncHandler(async (req, res) => {
         email,
         phone,
         password,
-        role: isFirstUser ? 'admin' : (role || 'staff'),
+        nic,
+        address,
+        role: isFirstUser ? 'admin' : (role || 'employee'),
         createdBy: req.user?._id,
     });
+
+    // Auto-create matching Employee record if requested
+    let employeeRecord = null;
+    if (user && createEmployee && !isFirstUser) {
+        try {
+            employeeRecord = await Employee.create({
+                userId:    user._id,
+                firstName: user.firstName,
+                lastName:  user.lastName,
+                email:     user.email,
+                phone:     phone || undefined,
+                nationalIdNumber: nic || undefined,
+                currentAddress: address ? { line1: address } : undefined,
+                dateOfJoining: new Date(),
+                createdBy: req.user?._id,
+            });
+        } catch (empErr) {
+            // Employee creation failure is non-fatal – user was created successfully
+            console.warn('Employee auto-create failed:', empErr.message);
+        }
+    }
 
     if (user) {
         res.status(201).json({
             success: true,
             message: isFirstUser
                 ? 'Admin account created successfully. Please login.'
-                : 'User registered successfully',
+                : `User registered successfully${employeeRecord ? ' and Employee profile created' : ''}`,
             data: {
                 _id: user._id,
                 firstName: user.firstName,
@@ -59,6 +88,7 @@ export const register = asyncHandler(async (req, res) => {
                 fullName: user.fullName,
                 email: user.email,
                 role: user.role,
+                employeeId: employeeRecord?._id || null,
             },
         });
     } else {
@@ -209,41 +239,46 @@ export const verifyAdmin = asyncHandler(async (req, res) => {
 
     const user = await User.findById(req.user._id).select('+password');
 
-    if (!user || user.role !== 'admin') {
-        if (!adminEmail) {
-            res.status(403);
-            throw new Error('Not authorized as admin. Please provide admin credentials.');
-        }
-
-        const admin = await User.findOne({ email: adminEmail, role: 'admin', isActive: true }).select('+password');
-        if (!admin) {
-            res.status(401);
-            throw new Error('Invalid admin credentials');
-        }
-
-        const isMatch = await admin.matchPassword(password);
+    // If current user is admin or manager, let them verify with their own password
+    if (user && ['admin', 'manager'].includes(user.role)) {
+        const isMatch = await user.matchPassword(password);
         if (!isMatch) {
             res.status(401);
-            throw new Error('Invalid admin credentials');
+            throw new Error('Invalid password');
         }
-
         return res.json({
             success: true,
-            message: 'Admin verification successful',
-            data: { adminId: admin._id, adminName: admin.fullName }
+            message: 'Verification successful',
+            data: { adminId: user._id, adminName: user.fullName }
         });
     }
 
-    // If current user IS admin, just check their password
-    const isMatch = await user.matchPassword(password);
-    if (!isMatch) {
-        res.status(401);
-        throw new Error('Invalid password');
+    // For other roles: require admin or manager email + password
+    if (!adminEmail) {
+        res.status(403);
+        throw new Error('Not authorized. Please provide admin or manager credentials.');
     }
 
-    res.json({
+    const privileged = await User.findOne({
+        email: adminEmail,
+        role: { $in: ['admin', 'manager'] },
+        isActive: true,
+    }).select('+password');
+
+    if (!privileged) {
+        res.status(401);
+        throw new Error('Invalid admin/manager credentials');
+    }
+
+    const isMatch = await privileged.matchPassword(password);
+    if (!isMatch) {
+        res.status(401);
+        throw new Error('Invalid admin/manager credentials');
+    }
+
+    return res.json({
         success: true,
-        message: 'Admin verification successful',
-        data: { adminId: user._id, adminName: user.fullName }
+        message: 'Verification successful',
+        data: { adminId: privileged._id, adminName: privileged.fullName }
     });
 });

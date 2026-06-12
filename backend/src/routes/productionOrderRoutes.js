@@ -17,7 +17,7 @@ router
     .route('/')
     .get(getProductionOrders)
     .post(
-        authorize('admin', 'manager', 'production_staff'),
+        authorize('admin', 'manager', 'employee'),
         validate(createProductionOrderSchema),
         createProductionOrder
     );
@@ -28,20 +28,20 @@ router
     .delete(authorize('admin', 'manager'), deleteProductionOrder);
 
 router.patch('/:id/approve',
-    authorize('admin', 'manager', 'production_staff'),
+    authorize('admin', 'manager', 'employee'),
     approveProductionOrder);
 
 router.patch('/:id/start',
-    authorize('admin', 'manager', 'production_staff'),
+    authorize('admin', 'manager', 'employee'),
     startProductionOrder);
 
 router.patch('/:id/complete',
-    authorize('admin', 'manager', 'production_staff'),
+    authorize('admin', 'manager', 'employee'),
     validate(completeProductionSchema),
     completeProductionOrder);
 
 router.patch('/:id/hold',
-    authorize('admin', 'manager', 'production_staff'),
+    authorize('admin', 'manager', 'employee'),
     holdProductionOrder);
 
 router.patch('/:id/cancel',

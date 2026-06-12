@@ -2,7 +2,7 @@ import express from 'express';
 import {
     createDepartment, getDepartments, updateDepartment, deleteDepartment,
     createDesignation, getDesignations, updateDesignation, deleteDesignation,
-    createEmployee, getEmployees, getEmployeeById, updateEmployee, deleteEmployee,
+    createEmployee, getEmployees, getEmployeeById, getEmployeeMe, updateEmployee, deleteEmployee,
     createShift, getShifts, updateShift, deleteShift,
     markAttendance, getAttendance, bulkMarkAttendance,
     createLeaveRequest, getLeaveRequests, approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest,
@@ -25,6 +25,7 @@ router.route('/designations').get(getDesignations).post(hrOnly, createDesignatio
 router.route('/designations/:id').put(hrOnly, updateDesignation).delete(hrOnly, deleteDesignation);
 
 // Employees
+router.get('/employees/me', getEmployeeMe);             // must be before /:id
 router.route('/employees').get(getEmployees).post(hrOnly, createEmployee);
 router.route('/employees/:id').get(getEmployeeById).put(hrOnly, updateEmployee).delete(hrOnly, deleteEmployee);
 

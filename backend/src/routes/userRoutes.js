@@ -8,7 +8,7 @@ router.use(protect);
 router.route('/').get(getUsers);
 router.route('/:id')
     .get(getUserById)
-    .put(authorize('admin'), updateUser)
-    .delete(authorize('admin'), deleteUser);
+    .put(authorize('admin', 'manager'), updateUser)
+    .delete(authorize('admin', 'manager'), deleteUser);
 
 export default router;

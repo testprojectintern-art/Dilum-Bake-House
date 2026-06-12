@@ -311,6 +311,16 @@ export const markPayrollPaid = asyncHandler(async (req, res) => {
 
 export const getEmployeePayslip = asyncHandler(async (req, res) => {
     const { payrollId, employeeId } = req.params;
+
+    // Restrict cashier & employee roles from viewing other employees' payslips
+    if (['employee', 'cashier'].includes(req.user.role)) {
+        const emp = await Employee.findOne({ userId: req.user._id });
+        if (!emp || emp._id.toString() !== employeeId) {
+            res.status(403);
+            throw new Error('You are not authorized to view this payslip');
+        }
+    }
+
     const p = await Payroll.findById(payrollId);
     if (!p) { res.status(404); throw new Error('Payroll not found'); }
 
@@ -390,4 +400,58 @@ export const previewPayslip = asyncHandler(async (req, res) => {
         success: true,
         data: { employee: emp, workingDays, attendance, calculation: calc },
     });
+});
+
+/**
+ * @desc    Get all payslips for the currently logged-in user
+ * @route   GET /api/payroll/my-payslips
+ * @access  Private (all roles with an employee profile)
+ */
+export const getMyPayslips = asyncHandler(async (req, res) => {
+    // Find the employee record linked to this user
+    const emp = await Employee.findOne({ userId: req.user._id });
+    if (!emp) {
+        return res.json({ success: true, count: 0, data: [] });
+    }
+
+    // Find all approved/paid payrolls that contain this employee's payslip
+    const payrolls = await Payroll.find({
+        status: { $in: ['approved', 'paid', 'closed'] },
+        'payslips.employeeId': emp._id,
+    })
+        .select('payrollNumber periodMonth periodYear periodStartDate periodEndDate status paidAt payslips')
+        .sort({ periodYear: -1, periodMonth: -1 })
+        .limit(24); // last 2 years
+
+    const myPayslips = payrolls
+        .map((p) => {
+            const ps = p.payslips.find((s) => s.employeeId.toString() === emp._id.toString());
+            if (!ps) return null;
+            return {
+                payrollId: p._id,
+                payrollNumber: p.payrollNumber,
+                periodMonth: p.periodMonth,
+                periodYear: p.periodYear,
+                periodStartDate: p.periodStartDate,
+                periodEndDate: p.periodEndDate,
+                payrollStatus: p.status,
+                paidAt: p.paidAt,
+                employeeId: ps.employeeId,
+                employeeName: ps.employeeName,
+                basicSalary: ps.basicSalary,
+                grossEarnings: ps.grossEarnings,
+                totalDeductions: ps.totalDeductions,
+                netPay: ps.netPay,
+                paymentStatus: ps.paymentStatus,
+                epfEmployeeContribution: ps.epfEmployeeContribution,
+                epfEmployerContribution: ps.epfEmployerContribution,
+                etfContribution: ps.etfContribution,
+                workingDays: ps.workingDays,
+                daysPresent: ps.daysPresent,
+                daysAbsent: ps.daysAbsent,
+            };
+        })
+        .filter(Boolean);
+
+    res.json({ success: true, count: myPayslips.length, data: myPayslips });
 });

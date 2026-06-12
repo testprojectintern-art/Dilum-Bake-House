@@ -91,6 +91,7 @@ import ProductionReportPage from './pages/reports/ProductionReportPage';
 import ReturnsReportPage from './pages/reports/ReturnsReportPage';
 import FinancialSnapshotPage from './pages/reports/FinancialSnapshotPage';
 import HrReportsPage from './pages/reports/HrReportsPage';
+import AiPredictionsPage from './pages/reports/AiPredictionsPage';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
@@ -103,7 +104,7 @@ function App() {
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       <Route path="/receipt/:id" element={
-          <ProtectedRoute allowedRoles={['admin', 'manager', 'accountant', 'sales_manager', 'sales_rep', 'warehouse_staff', 'production_staff', 'inventory_admin', 'staff']}>
+          <ProtectedRoute allowedRoles={['admin', 'manager', 'accountant', 'cashier']}>
             <ReceiptPrintPage />
           </ProtectedRoute>
         }
@@ -112,7 +113,7 @@ function App() {
       <Route
         path="/price-checker"
         element={
-          <ProtectedRoute allowedRoles={['customer', 'admin', 'manager', 'inventory_admin', 'staff']}>
+          <ProtectedRoute allowedRoles={['admin', 'manager', 'cashier', 'employee']}>
             <PriceCheckerPage />
           </ProtectedRoute>
         }
@@ -120,104 +121,105 @@ function App() {
 
       <Route
         element={
-          <ProtectedRoute allowedRoles={['admin', 'manager', 'accountant', 'sales_manager', 'sales_rep', 'warehouse_staff', 'production_staff', 'inventory_admin', 'staff']}>
+          <ProtectedRoute allowedRoles={['admin', 'manager', 'accountant', 'cashier', 'employee']}>
             <AppLayout />
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/wholesale-prices" element={<WholesalePricesPage />} />
-        <Route path="/categories" element={<CategoriesPage />} />
-        <Route path="/brands" element={<BrandsPage />} />
-        <Route path="/customers" element={<CustomersPage />} />
-        <Route path="/customer-groups" element={<CustomerGroupsPage />} />
-        <Route path="/sales-orders" element={<SalesOrdersPage />} />
-        <Route path="/sales-orders/new" element={<SalesOrderFormPage />} />
-        <Route path="/sales-orders/:id" element={<SalesOrderDetailPage />} />
-        <Route path="/warehouses" element={<WarehousesPage />} />
+        <Route path="/" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><DashboardPage /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><DashboardPage /></ProtectedRoute>} />
+        <Route path="/products" element={<ProtectedRoute allowedRoles={['admin','manager']}><ProductsPage /></ProtectedRoute>} />
+        <Route path="/wholesale-prices" element={<ProtectedRoute allowedRoles={['admin','manager']}><WholesalePricesPage /></ProtectedRoute>} />
+        <Route path="/categories" element={<ProtectedRoute allowedRoles={['admin','manager']}><CategoriesPage /></ProtectedRoute>} />
+        <Route path="/brands" element={<ProtectedRoute allowedRoles={['admin','manager']}><BrandsPage /></ProtectedRoute>} />
+        <Route path="/customers" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><CustomersPage /></ProtectedRoute>} />
+        <Route path="/customer-groups" element={<ProtectedRoute allowedRoles={['admin','manager']}><CustomerGroupsPage /></ProtectedRoute>} />
+        <Route path="/sales-orders" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><SalesOrdersPage /></ProtectedRoute>} />
+        <Route path="/sales-orders/new" element={<ProtectedRoute allowedRoles={['admin','manager','cashier']}><SalesOrderFormPage /></ProtectedRoute>} />
+        <Route path="/sales-orders/:id" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><SalesOrderDetailPage /></ProtectedRoute>} />
+        <Route path="/warehouses" element={<ProtectedRoute allowedRoles={['admin','manager']}><WarehousesPage /></ProtectedRoute>} />
         <Route path="/stock" element={<StockPage />} />
-        <Route path="/stock/opening" element={<OpeningStockPage />} />
-        <Route path="/stock/transfer" element={<StockTransferPage />} />
-        <Route path="/stock/adjustment" element={<StockAdjustmentPage />} />
+        <Route path="/stock/opening" element={<ProtectedRoute allowedRoles={['admin','manager']}><OpeningStockPage /></ProtectedRoute>} />
+        <Route path="/stock/transfer" element={<ProtectedRoute allowedRoles={['admin','manager']}><StockTransferPage /></ProtectedRoute>} />
+        <Route path="/stock/adjustment" element={<ProtectedRoute allowedRoles={['admin','manager']}><StockAdjustmentPage /></ProtectedRoute>} />
         <Route path="/stock/movements" element={<StockMovementsPage />} />
-        <Route path="/damages" element={<DamagesPage />} />
-        <Route path="/suppliers" element={<SuppliersPage />} />
-        <Route path="/supplier-returns" element={<SupplierReturnsPage />} />
-        <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
-        <Route path="/purchase-orders/new" element={<PurchaseOrderFormPage />} />
-        <Route path="/purchase-orders/:id" element={<PurchaseOrderDetailPage />} />
-        <Route path="/invoices" element={<InvoicesPage />} />
-        <Route path="/invoices/new" element={<InvoiceFormPage />} />
-        <Route path="/invoices/from-sales-order" element={<InvoiceFromSalesOrderPage />} />
-        <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
-        <Route path="/grns" element={<GrnsPage />} />
-        <Route path="/bills" element={<BillsPage />} />
-        <Route path="/bills/from-grn" element={<BillFromGrnPage />} />
-        <Route path="/bills/:id" element={<BillDetailPage />} />
-        <Route path="/payments" element={<PaymentsPage />} />
-        <Route path="/cheques" element={<ChequesPage />} />
-        <Route path="/bank-accounts" element={<BankAccountsPage />} />
-        <Route path="/fund-transfers" element={<FundTransfersPage />} />
-        <Route path="/expenses" element={<ExpensesPage />} />
-        <Route path="/payments/new" element={<PaymentFormPage />} />
-        <Route path="/payments/:id" element={<PaymentDetailPage />} />
-        <Route path="/installments" element={<InstallmentsPage />} />
-        <Route path="/boms" element={<BomsPage />} />
-        <Route path="/boms/new" element={<BomFormPage />} />
-        <Route path="/boms/:id" element={<BomDetailPage />} />
-        <Route path="/boms/:id/edit" element={<BomFormPage />} />
-        <Route path="/production-orders" element={<ProductionOrdersPage />} />
-        <Route path="/production-orders/new" element={<ProductionOrderFormPage />} />
-        <Route path="/production-orders/:id" element={<ProductionOrderDetailPage />} />
-        <Route path="/returns" element={<ReturnsPage />} />
-        <Route path="/returns/new" element={<ReturnFormPage />} />
-        <Route path="/returns/:id" element={<ReturnDetailPage />} />
-        <Route path="/credit-notes" element={<CreditNotesPage />} />
-        <Route path="/credit-notes/:id" element={<CreditNoteDetailPage />} />
-        <Route path="/pos" element={<PosPage />} />
-        <Route path="/pos-sessions" element={<PosSessionsPage />} />
+        <Route path="/damages" element={<ProtectedRoute allowedRoles={['admin','manager','employee']}><DamagesPage /></ProtectedRoute>} />
+        <Route path="/suppliers" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><SuppliersPage /></ProtectedRoute>} />
+        <Route path="/supplier-returns" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><SupplierReturnsPage /></ProtectedRoute>} />
+        <Route path="/purchase-orders" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><PurchaseOrdersPage /></ProtectedRoute>} />
+        <Route path="/purchase-orders/new" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><PurchaseOrderFormPage /></ProtectedRoute>} />
+        <Route path="/purchase-orders/:id" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><PurchaseOrderDetailPage /></ProtectedRoute>} />
+        <Route path="/invoices" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><InvoicesPage /></ProtectedRoute>} />
+        <Route path="/invoices/new" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><InvoiceFormPage /></ProtectedRoute>} />
+        <Route path="/invoices/from-sales-order" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><InvoiceFromSalesOrderPage /></ProtectedRoute>} />
+        <Route path="/invoices/:id" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><InvoiceDetailPage /></ProtectedRoute>} />
+        <Route path="/grns" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><GrnsPage /></ProtectedRoute>} />
+        <Route path="/bills" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><BillsPage /></ProtectedRoute>} />
+        <Route path="/bills/from-grn" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><BillFromGrnPage /></ProtectedRoute>} />
+        <Route path="/bills/:id" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><BillDetailPage /></ProtectedRoute>} />
+        <Route path="/payments" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><PaymentsPage /></ProtectedRoute>} />
+        <Route path="/cheques" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><ChequesPage /></ProtectedRoute>} />
+        <Route path="/bank-accounts" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><BankAccountsPage /></ProtectedRoute>} />
+        <Route path="/fund-transfers" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><FundTransfersPage /></ProtectedRoute>} />
+        <Route path="/expenses" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><ExpensesPage /></ProtectedRoute>} />
+        <Route path="/payments/new" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><PaymentFormPage /></ProtectedRoute>} />
+        <Route path="/payments/:id" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><PaymentDetailPage /></ProtectedRoute>} />
+        <Route path="/installments" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><InstallmentsPage /></ProtectedRoute>} />
+        <Route path="/boms" element={<ProtectedRoute allowedRoles={['admin','manager','employee']}><BomsPage /></ProtectedRoute>} />
+        <Route path="/boms/new" element={<ProtectedRoute allowedRoles={['admin','manager','employee']}><BomFormPage /></ProtectedRoute>} />
+        <Route path="/boms/:id" element={<ProtectedRoute allowedRoles={['admin','manager','employee']}><BomDetailPage /></ProtectedRoute>} />
+        <Route path="/boms/:id/edit" element={<ProtectedRoute allowedRoles={['admin','manager','employee']}><BomFormPage /></ProtectedRoute>} />
+        <Route path="/production-orders" element={<ProtectedRoute allowedRoles={['admin','manager','employee']}><ProductionOrdersPage /></ProtectedRoute>} />
+        <Route path="/production-orders/new" element={<ProtectedRoute allowedRoles={['admin','manager','employee']}><ProductionOrderFormPage /></ProtectedRoute>} />
+        <Route path="/production-orders/:id" element={<ProtectedRoute allowedRoles={['admin','manager','employee']}><ProductionOrderDetailPage /></ProtectedRoute>} />
+        <Route path="/returns" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><ReturnsPage /></ProtectedRoute>} />
+        <Route path="/returns/new" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><ReturnFormPage /></ProtectedRoute>} />
+        <Route path="/returns/:id" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier']}><ReturnDetailPage /></ProtectedRoute>} />
+        <Route path="/credit-notes" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><CreditNotesPage /></ProtectedRoute>} />
+        <Route path="/credit-notes/:id" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><CreditNoteDetailPage /></ProtectedRoute>} />
+        <Route path="/pos" element={<ProtectedRoute allowedRoles={['admin','manager','cashier']}><PosPage /></ProtectedRoute>} />
+        <Route path="/pos-sessions" element={<ProtectedRoute allowedRoles={['admin','manager','cashier']}><PosSessionsPage /></ProtectedRoute>} />
 
-        <Route path="/supplier-returns/:id" element={<SupplierReturnDetailPage />} />
+        <Route path="/supplier-returns/:id" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><SupplierReturnDetailPage /></ProtectedRoute>} />
         <Route path="/repairs" element={<RepairsPage />} />
         <Route path="/repairs/:id" element={<RepairDetailPage />} />
-        <Route path="/employees" element={<EmployeesPage />} />
-        <Route path="/employees/new" element={<EmployeeFormPage />} />
-        <Route path="/employees/:id" element={<EmployeeDetailPage />} />
-        <Route path="/employees/:id/edit" element={<EmployeeFormPage />} />
-        <Route path="/departments" element={<DepartmentsPage />} />
-        <Route path="/designations" element={<DesignationsPage />} />
-        <Route path="/shifts" element={<ShiftsPage />} />
+        <Route path="/employees" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><EmployeesPage /></ProtectedRoute>} />
+        <Route path="/employees/new" element={<ProtectedRoute allowedRoles={['admin','manager']}><EmployeeFormPage /></ProtectedRoute>} />
+        <Route path="/employees/:id" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><EmployeeDetailPage /></ProtectedRoute>} />
+        <Route path="/employees/:id/edit" element={<ProtectedRoute allowedRoles={['admin','manager']}><EmployeeFormPage /></ProtectedRoute>} />
+        <Route path="/departments" element={<ProtectedRoute allowedRoles={['admin','manager']}><DepartmentsPage /></ProtectedRoute>} />
+        <Route path="/designations" element={<ProtectedRoute allowedRoles={['admin','manager']}><DesignationsPage /></ProtectedRoute>} />
+        <Route path="/shifts" element={<ProtectedRoute allowedRoles={['admin','manager']}><ShiftsPage /></ProtectedRoute>} />
         <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/leaves" element={<LeaveRequestsPage />} />
         <Route path="/holidays" element={<HolidaysPage />} />
-        <Route path="/salary-structures" element={<SalaryStructuresPage />} />
-        <Route path="/payroll" element={<PayrollsPage />} />
-        <Route path="/payroll/:id" element={<PayrollDetailPage />} />
+        <Route path="/salary-structures" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><SalaryStructuresPage /></ProtectedRoute>} />
+        <Route path="/payroll" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><PayrollsPage /></ProtectedRoute>} />
+        <Route path="/payroll/:id" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><PayrollDetailPage /></ProtectedRoute>} />
         <Route path="/payroll/:payrollId/payslip/:employeeId" element={<PayslipDetailPage />} />
 
-        <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/reports/financial" element={<FinancialReportPage />} />
-        <Route path="/reports/sales" element={<SalesSummaryReportPage />} />
-        <Route path="/reports/sales-by-product" element={<SalesByProductReportPage />} />
-        <Route path="/reports/sales-by-customer" element={<SalesByCustomerReportPage />} />
-        <Route path="/reports/stock-valuation" element={<StockValuationReportPage />} />
-        <Route path="/reports/slow-fast-movers" element={<SlowFastMoversReportPage />} />
-        <Route path="/reports/inventory/low-stock" element={<LowStockReportPage />} />
-        <Route path="/reports/stock-movement" element={<StockMovementReportPage />} />
-        <Route path="/reports/production" element={<ProductionReportPage />} />
-        <Route path="/reports/returns-damages" element={<ReturnsReportPage />} />
-        <Route path="/reports/financial" element={<FinancialSnapshotPage />} />
-        <Route path="/reports/hr" element={<HrReportsPage />} />
+        <Route path="/reports" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><ReportsPage /></ProtectedRoute>} />
+        <Route path="/ai-predictions" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><AiPredictionsPage /></ProtectedRoute>} />
+        <Route path="/reports/financial" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><FinancialReportPage /></ProtectedRoute>} />
+        <Route path="/reports/sales" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><SalesSummaryReportPage /></ProtectedRoute>} />
+        <Route path="/reports/sales-by-product" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><SalesByProductReportPage /></ProtectedRoute>} />
+        <Route path="/reports/sales-by-customer" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><SalesByCustomerReportPage /></ProtectedRoute>} />
+        <Route path="/reports/stock-valuation" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><StockValuationReportPage /></ProtectedRoute>} />
+        <Route path="/reports/slow-fast-movers" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><SlowFastMoversReportPage /></ProtectedRoute>} />
+        <Route path="/reports/inventory/low-stock" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><LowStockReportPage /></ProtectedRoute>} />
+        <Route path="/reports/stock-movement" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><StockMovementReportPage /></ProtectedRoute>} />
+        <Route path="/reports/production" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','employee']}><ProductionReportPage /></ProtectedRoute>} />
+        <Route path="/reports/returns-damages" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><ReturnsReportPage /></ProtectedRoute>} />
+        <Route path="/reports/financial" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><FinancialSnapshotPage /></ProtectedRoute>} />
+        <Route path="/reports/hr" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><HrReportsPage /></ProtectedRoute>} />
 
         <Route path="/users"
-          element={<ProtectedRoute allowedRoles={['admin']}><UsersPage /></ProtectedRoute>} />
+          element={<ProtectedRoute allowedRoles={['admin', 'manager']}><UsersPage /></ProtectedRoute>} />
         <Route path="/roles"
-          element={<ProtectedRoute allowedRoles={['admin']}><RolesPage /></ProtectedRoute>} />
+          element={<ProtectedRoute allowedRoles={['admin', 'manager']}><RolesPage /></ProtectedRoute>} />
 
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin','manager']}><SettingsPage /></ProtectedRoute>} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

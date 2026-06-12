@@ -32,8 +32,10 @@ export default function LoginPage() {
             const { token, ...user } = response.data;
             login(user, token);
             toast.success(`Welcome back, ${user.firstName}!`);
-            if (user.role === 'customer') {
-                navigate('/price-checker');
+            if (user.role === 'cashier') {
+                navigate('/pos');
+            } else if (user.role === 'employee') {
+                navigate('/leaves');
             } else {
                 navigate('/dashboard');
             }
@@ -47,7 +49,9 @@ export default function LoginPage() {
     // Already logged in? Go to dashboard
     if (isAuthenticated) {
         const user = useAuthStore.getState().user;
-        return <Navigate to={user?.role === 'customer' ? '/price-checker' : '/dashboard'} replace />;
+        if (user?.role === 'cashier') return <Navigate to="/pos" replace />;
+        if (user?.role === 'employee') return <Navigate to="/leaves" replace />;
+        return <Navigate to="/dashboard" replace />;
     }
 
     const onSubmit = (data) => {

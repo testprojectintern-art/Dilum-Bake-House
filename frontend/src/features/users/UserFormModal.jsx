@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { UserPlus, Link } from 'lucide-react';
 
 import Modal from '../../components/ui/Modal';
 import Button from '../../components/ui/Button';
@@ -36,9 +37,13 @@ const updateSchema = z.object({
     address: z.string().optional().or(z.literal('')),
 });
 
+// Roles that should get an Employee record automatically
+const EMPLOYEE_ROLES = ['cashier', 'accountant', 'employee', 'manager'];
+
 export default function UserFormModal({ isOpen, onClose, user = null }) {
     const isEdit = !!user;
-    const [selectedRole, setSelectedRole] = useState('staff');
+    const [selectedRole, setSelectedRole] = useState('employee');
+    const [createEmployee, setCreateEmployee] = useState(false);
 
     const createMutation = useCreateUser();
     const updateMutation = useUpdateUser();
@@ -47,7 +52,7 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
         resolver: zodResolver(isEdit ? updateSchema : createSchema),
         defaultValues: {
             firstName: '', lastName: '', email: '', password: '',
-            phone: '', role: 'staff', isActive: true,
+            phone: '', role: 'employee', isActive: true,
             nic: '', address: '',
         },
     });
@@ -60,24 +65,31 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
                 phone: user.phone || '',
-                role: user.role || 'staff',
+                role: user.role || 'employee',
                 isActive: user.isActive !== false,
                 nic: user.nic || '',
                 address: user.address || '',
             });
-            setSelectedRole(user.role || 'staff');
+            setSelectedRole(user.role || 'employee');
         } else if (isOpen) {
             reset({
                 firstName: '', lastName: '', email: '', password: '',
-                phone: '', role: 'staff', isActive: true,
+                phone: '', role: 'employee', isActive: true,
                 nic: '', address: '',
             });
-            setSelectedRole('staff');
+            setSelectedRole('employee');
+            setCreateEmployee(false);
         }
     }, [isOpen, user, reset]);
 
     useEffect(() => {
         setSelectedRole(roleValue);
+        // Auto-suggest create employee for staff roles
+        if (EMPLOYEE_ROLES.includes(roleValue)) {
+            setCreateEmployee(true);
+        } else {
+            setCreateEmployee(false);
+        }
     }, [roleValue]);
 
     const onSubmit = async (data) => {
@@ -105,6 +117,7 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
                     role: data.role,
                     nic: data.nic,
                     address: data.address,
+                    createEmployee, // ← pass to backend
                 });
             }
             onClose();
@@ -114,6 +127,7 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
     const roleConfig = getRoleConfig(selectedRole);
     const roleOptions = ROLES.map((r) => ({ value: r.value, label: r.label }));
     const isLoading = createMutation.isPending || updateMutation.isPending;
+    const showEmployeeToggle = !isEdit && EMPLOYEE_ROLES.includes(selectedRole);
 
     return (
         <Modal
@@ -164,6 +178,37 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
                         </div>
                     </div>
 
+                    {/* ── Create Employee Record Toggle ── */}
+                    {showEmployeeToggle && (
+                        <div
+                            onClick={() => setCreateEmployee(!createEmployee)}
+                            className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                                createEmployee
+                                    ? 'border-indigo-500 bg-indigo-50'
+                                    : 'border-gray-200 bg-gray-50 hover:border-indigo-200'
+                            }`}
+                        >
+                            <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                createEmployee ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white'
+                            }`}>
+                                {createEmployee && (
+                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                )}
+                            </div>
+                            <div>
+                                <p className={`font-semibold text-sm flex items-center gap-1.5 ${createEmployee ? 'text-indigo-700' : 'text-gray-700'}`}>
+                                    <Link size={14} />
+                                    Also create an Employee record & link it
+                                </p>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                    This will automatically create a matching Employee profile (for payroll, attendance, leaves) and link it to this user account.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {isEdit && (
                         <label className="flex items-center gap-2 text-sm">
                             <input type="checkbox" {...register('isActive')} />
@@ -175,7 +220,12 @@ export default function UserFormModal({ isOpen, onClose, user = null }) {
                 <div className="flex justify-end gap-2 px-6 py-4 border-t bg-gray-50">
                     <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>Cancel</Button>
                     <Button type="submit" variant="primary" loading={isLoading}>
-                        {isEdit ? 'Update User' : 'Create User'}
+                        {isEdit ? 'Update User' : (
+                            <span className="flex items-center gap-1.5">
+                                <UserPlus size={15} />
+                                Create User{createEmployee ? ' + Employee' : ''}
+                            </span>
+                        )}
                     </Button>
                 </div>
             </form>

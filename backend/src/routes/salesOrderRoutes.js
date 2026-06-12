@@ -14,7 +14,7 @@ router
     .route('/')
     .get(getSalesOrders)
     .post(
-        authorize('admin', 'manager', 'sales_manager', 'sales_rep'),
+        authorize('admin', 'manager', 'cashier'),
         validate(createSalesOrderSchema),
         createSalesOrder
     );
@@ -23,15 +23,15 @@ router
     .route('/:id')
     .get(getSalesOrderById)
     .put(
-        authorize('admin', 'manager', 'sales_manager', 'sales_rep'),
+        authorize('admin', 'manager', 'cashier'),
         validate(updateSalesOrderSchema),
         updateSalesOrder
     )
-    .delete(authorize('admin', 'manager', 'sales_manager'), deleteSalesOrder);
+    .delete(authorize('admin', 'manager', 'cashier'), deleteSalesOrder);
 
 router.patch(
     '/:id/status',
-    authorize('admin', 'manager', 'sales_manager', 'accountant', 'warehouse_staff'),
+    authorize('admin', 'manager', 'cashier', 'accountant'),
     changeSalesOrderStatus
 );
 

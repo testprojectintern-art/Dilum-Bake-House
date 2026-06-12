@@ -13,7 +13,8 @@ const AdminVerificationModal = ({ isOpen, onClose, onVerified, title = "Admin Ve
     const [adminEmail, setAdminEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const isCurrentUserAdmin = user?.role === 'admin';
+    // Both admin and manager can verify with their own password
+    const isPrivilegedUser = ['admin', 'manager'].includes(user?.role);
 
     const handleVerify = async (e) => {
         e.preventDefault();
@@ -23,8 +24,8 @@ const AdminVerificationModal = ({ isOpen, onClose, onVerified, title = "Admin Ve
             return;
         }
 
-        if (!isCurrentUserAdmin && !adminEmail) {
-            toast.error('Admin email is required');
+        if (!isPrivilegedUser && !adminEmail) {
+            toast.error('Admin or Manager email is required');
             return;
         }
 
@@ -32,7 +33,7 @@ const AdminVerificationModal = ({ isOpen, onClose, onVerified, title = "Admin Ve
         try {
             const response = await api.post('/auth/verify-admin', {
                 password,
-                adminEmail: isCurrentUserAdmin ? undefined : adminEmail
+                adminEmail: isPrivilegedUser ? undefined : adminEmail
             });
 
             if (response.data.success) {
@@ -59,11 +60,11 @@ const AdminVerificationModal = ({ isOpen, onClose, onVerified, title = "Admin Ve
                 </div>
 
                 <form onSubmit={handleVerify} className="space-y-4">
-                    {!isCurrentUserAdmin && (
+                    {!isPrivilegedUser && (
                         <Input
-                            label="Admin Email"
+                            label="Admin / Manager Email"
                             type="email"
-                            placeholder="Enter admin email"
+                            placeholder="Enter admin or manager email"
                             value={adminEmail}
                             onChange={(e) => setAdminEmail(e.target.value)}
                             required
@@ -71,7 +72,7 @@ const AdminVerificationModal = ({ isOpen, onClose, onVerified, title = "Admin Ve
                     )}
                     
                     <Input
-                        label={isCurrentUserAdmin ? "Your Password" : "Admin Password"}
+                        label={isPrivilegedUser ? "Your Password" : "Admin / Manager Password"}
                         type="password"
                         placeholder="••••••••"
                         value={password}

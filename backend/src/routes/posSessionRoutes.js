@@ -1,14 +1,16 @@
 import express from 'express';
 import { getActiveSession, openSession, closeSession, getSessions } from '../controllers/posSessionController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.use(protect);
 
-router.get('/', getSessions);
-router.get('/active', getActiveSession);
-router.post('/open', openSession);
-router.post('/close', closeSession);
+const posAllowed = authorize('admin', 'manager', 'cashier');
+
+router.get('/', posAllowed, getSessions);
+router.get('/active', posAllowed, getActiveSession);
+router.post('/open', posAllowed, openSession);
+router.post('/close', posAllowed, closeSession);
 
 export default router;

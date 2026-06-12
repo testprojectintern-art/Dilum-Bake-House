@@ -9,7 +9,7 @@ router.use(protect);
 
 router.route('/')
     .get(getGrns)
-    .post(authorize('admin', 'manager', 'warehouse_staff'), validate(createGrnSchema), createGrn);
+    .post(authorize('admin', 'manager', 'accountant'), validate(createGrnSchema), createGrn);
 
 router.route('/:id')
     .get(getGrnById)

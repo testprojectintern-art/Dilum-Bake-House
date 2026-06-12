@@ -10,13 +10,13 @@ router.use(protect);
 
 router.route('/')
     .get(getRepairs)
-    .post(authorize('admin', 'manager', 'warehouse_staff', 'production_staff'), createRepair);
+    .post(authorize('admin', 'manager', 'employee'), createRepair);
 
 router.route('/:id')
     .get(getRepairById)
-    .put(authorize('admin', 'manager', 'warehouse_staff', 'production_staff'), updateRepair);
+    .put(authorize('admin', 'manager', 'employee'), updateRepair);
 
-router.patch('/:id/start', authorize('admin', 'manager', 'warehouse_staff', 'production_staff'), startRepair);
-router.patch('/:id/complete', authorize('admin', 'manager', 'warehouse_staff', 'production_staff'), completeRepair);
+router.patch('/:id/start', authorize('admin', 'manager', 'employee'), startRepair);
+router.patch('/:id/complete', authorize('admin', 'manager', 'employee'), completeRepair);
 
 export default router;

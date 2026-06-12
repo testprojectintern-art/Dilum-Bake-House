@@ -18,14 +18,14 @@ router
     .route('/')
     .get(getInvoices)
     .post(
-        authorize('admin', 'manager', 'accountant', 'sales_manager'),
+        authorize('admin', 'manager', 'accountant', 'cashier'),
         validate(createInvoiceSchema),
         createInvoice
     );
 
 router.post(
     '/from-sales-order',
-    authorize('admin', 'manager', 'accountant', 'sales_manager'),
+    authorize('admin', 'manager', 'accountant', 'cashier'),
     validate(createFromSalesOrderSchema),
     createFromSalesOrder
 );
@@ -37,7 +37,7 @@ router
 
 router.patch(
     '/:id/status',
-    authorize('admin', 'manager', 'accountant', 'sales_manager'),
+    authorize('admin', 'manager', 'accountant', 'cashier'),
     changeInvoiceStatus
 );
 

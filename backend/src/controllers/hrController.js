@@ -1,4 +1,5 @@
 import asyncHandler from 'express-async-handler';
+import mongoose from 'mongoose';
 import Department from '../models/Department.js';
 import Designation from '../models/Designation.js';
 import Employee from '../models/Employee.js';
@@ -104,6 +105,9 @@ export const getEmployees = asyncHandler(async (req, res) => {
     } = req.query;
 
     const filter = {};
+    if (['employee', 'cashier'].includes(req.user.role)) {
+        filter.userId = req.user._id;
+    }
     if (search) {
         filter.$or = [
             { firstName: { $regex: search, $options: 'i' } },
@@ -137,7 +141,33 @@ export const getEmployees = asyncHandler(async (req, res) => {
     });
 });
 
+/**
+ * @desc Get the employee record linked to the currently logged-in user
+ * @route GET /api/hr/employees/me
+ * @access Private
+ */
+export const getEmployeeMe = asyncHandler(async (req, res) => {
+    const emp = await Employee.findOne({ userId: req.user._id })
+        .populate('departmentId', 'name code')
+        .populate('designationId', 'name code')
+        .populate('reportsToId', 'firstName lastName employeeCode')
+        .populate('workShift', 'name startTime endTime')
+        .populate('salaryStructureId', 'name code');
+    if (!emp) {
+        return res.json({ success: true, data: null });
+    }
+    res.json({ success: true, data: emp });
+});
+
 export const getEmployeeById = asyncHandler(async (req, res) => {
+    // Employees/cashiers can only view their own record
+    if (['employee', 'cashier'].includes(req.user.role)) {
+        const self = await Employee.findOne({ userId: req.user._id });
+        if (!self || self._id.toString() !== req.params.id) {
+            res.status(403);
+            throw new Error('Not authorized to view this employee record');
+        }
+    }
     const emp = await Employee.findById(req.params.id)
         .populate('departmentId', 'name code')
         .populate('designationId', 'name code')
@@ -257,7 +287,13 @@ export const getAttendance = asyncHandler(async (req, res) => {
     } = req.query;
 
     const filter = {};
-    if (employeeId) filter.employeeId = employeeId;
+    if (['employee', 'cashier'].includes(req.user.role)) {
+        const emp = await Employee.findOne({ userId: req.user._id });
+        if (emp) filter.employeeId = emp._id;
+        else filter.employeeId = new mongoose.Types.ObjectId();
+    } else if (employeeId) {
+        filter.employeeId = employeeId;
+    }
     if (status) filter.status = status;
     if (date) {
         const d = new Date(date); d.setHours(0, 0, 0, 0);
@@ -380,7 +416,13 @@ export const getLeaveRequests = asyncHandler(async (req, res) => {
     } = req.query;
 
     const filter = {};
-    if (employeeId) filter.employeeId = employeeId;
+    if (['employee', 'cashier'].includes(req.user.role)) {
+        const emp = await Employee.findOne({ userId: req.user._id });
+        if (emp) filter.employeeId = emp._id;
+        else filter.employeeId = new mongoose.Types.ObjectId();
+    } else if (employeeId) {
+        filter.employeeId = employeeId;
+    }
     if (status) filter.status = status;
     if (leaveType) filter.leaveType = leaveType;
     if (startDate || endDate) {
@@ -448,6 +490,14 @@ export const rejectLeaveRequest = asyncHandler(async (req, res) => {
 export const cancelLeaveRequest = asyncHandler(async (req, res) => {
     const leave = await LeaveRequest.findById(req.params.id);
     if (!leave) { res.status(404); throw new Error('Leave not found'); }
+
+    if (['employee', 'cashier'].includes(req.user.role)) {
+        const emp = await Employee.findOne({ userId: req.user._id });
+        if (!emp || leave.employeeId.toString() !== emp._id.toString()) {
+            res.status(403);
+            throw new Error('Not authorized to cancel this leave request');
+        }
+    }
 
     const wasApproved = leave.status === 'approved';
     leave.status = 'cancelled';

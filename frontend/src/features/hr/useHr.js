@@ -23,6 +23,7 @@ export const useDeleteDesignation = () => { const qc = useQueryClient(); return 
 // Employees
 export const useEmployees = (filters = {}) => useQuery({ queryKey: ['employees', filters], queryFn: () => employeesApi.list(filters), placeholderData: (prev) => prev });
 export const useEmployee = (id) => useQuery({ queryKey: ['employee', id], queryFn: () => employeesApi.getById(id), enabled: !!id });
+export const useEmployeeMe = () => useQuery({ queryKey: ['employeeMe'], queryFn: () => employeesApi.getMe() });
 export const useCreateEmployee = () => { const qc = useQueryClient(); return useMutation({ mutationFn: employeesApi.create, onSuccess: () => { invalidate(qc, ['employees'])(); toast.success('Employee added'); }, onError: onErr }); };
 export const useUpdateEmployee = () => { const qc = useQueryClient(); return useMutation({ mutationFn: ({ id, data }) => employeesApi.update(id, data), onSuccess: () => { invalidate(qc, ['employees', 'employee'])(); toast.success('Updated'); }, onError: onErr }); };
 export const useDeleteEmployee = () => { const qc = useQueryClient(); return useMutation({ mutationFn: employeesApi.delete, onSuccess: () => { invalidate(qc, ['employees'])(); toast.success('Terminated'); }, onError: onErr }); };
@@ -77,4 +78,8 @@ export const usePayslip = (payrollId, employeeId) => useQuery({
     queryKey: ['payslip', payrollId, employeeId],
     queryFn: () => payrollApi.getPayslip(payrollId, employeeId),
     enabled: !!payrollId && !!employeeId,
+});
+export const useMyPayslips = () => useQuery({
+    queryKey: ['myPayslips'],
+    queryFn: () => payrollApi.getMyPayslips(),
 });

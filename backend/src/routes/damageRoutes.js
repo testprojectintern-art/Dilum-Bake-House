@@ -11,7 +11,7 @@ router.get('/summary', getDamageSummary);
 
 router.route('/')
     .get(getDamages)
-    .post(authorize('admin', 'manager', 'warehouse_staff', 'production_staff'), createDamage);
+    .post(authorize('admin', 'manager', 'employee'), createDamage);
 
 router.route('/:id').get(getDamageById);
 router.patch('/:id/write-off', authorize('admin', 'manager'), writeOffDamage);

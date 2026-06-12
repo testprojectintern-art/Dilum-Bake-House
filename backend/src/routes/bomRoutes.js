@@ -13,12 +13,12 @@ router.use(protect);
 router
     .route('/')
     .get(getBoms)
-    .post(authorize('admin', 'manager', 'production_staff'), validate(createBomSchema), createBom);
+    .post(authorize('admin', 'manager', 'employee'), validate(createBomSchema), createBom);
 
 router
     .route('/:id')
     .get(getBomById)
-    .put(authorize('admin', 'manager', 'production_staff'), validate(updateBomSchema), updateBom)
+    .put(authorize('admin', 'manager', 'employee'), validate(updateBomSchema), updateBom)
     .delete(authorize('admin', 'manager'), deleteBom);
 
 router.get('/:id/check-availability', checkMaterialAvailability);
