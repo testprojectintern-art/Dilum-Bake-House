@@ -116,7 +116,12 @@ export default function PosPage() {
     const warehouses = warehousesData?.data || [];
     const customers = customersData?.data || [];
     const products = (productsData?.data || []).filter((p) => p.canBeSold !== false);
-    const categories = categoriesData?.data || [];
+    const categories = useMemo(() => {
+        const rawCats = categoriesData?.data || [];
+        return rawCats.filter((c) =>
+            products.some((p) => (p.categoryId?._id || p.categoryId) === c._id)
+        );
+    }, [categoriesData, products]);
     const stockItems = stockData?.data || [];
 
     // Set default warehouse
