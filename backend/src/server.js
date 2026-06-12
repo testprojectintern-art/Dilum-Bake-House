@@ -118,11 +118,14 @@ app.use('/api/reports', reportsRoutes);
 
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+    const mongoose = (await import('mongoose')).default;
+    const User = mongoose.model('User');
     res.json({
         success: true,
         message: 'Server is running',
         timestamp: new Date().toISOString(),
+        roles: User.schema.path('role').enumValues,
     });
 });
 
