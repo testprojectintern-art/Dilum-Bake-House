@@ -74,9 +74,9 @@ export default function ExpenseFormModal({ isOpen, onClose }) {
         mutationFn: expensesApi.create,
         onSuccess: () => {
             toast.success('Expense recorded successfully');
-            queryClient.invalidateQueries(['expenses']);
-            queryClient.invalidateQueries(['expense-categories']);
-            queryClient.invalidateQueries(['pos-sessions', 'active']);
+            queryClient.invalidateQueries({ queryKey: ['expenses'] });
+            queryClient.invalidateQueries({ queryKey: ['expense-categories'] });
+            queryClient.invalidateQueries({ queryKey: ['pos-sessions', 'active'] });
             reset();
             setCategoryInput('');
             onClose();

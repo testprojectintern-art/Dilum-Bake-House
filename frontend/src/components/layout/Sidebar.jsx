@@ -32,6 +32,7 @@ const menuItems = [
         allowedRoles: ADMIN_MANAGER_ACCOUNTANT_CASHIER,
         children: [
             { label: 'Customers', path: '/customers', allowedRoles: ADMIN_MANAGER_ACCOUNTANT_CASHIER },
+            { label: 'Bulk SMS Campaign', path: '/customers/bulk-sms', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
             { label: 'Suppliers', path: '/suppliers', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
             { label: 'Staff / Users', path: '/users', allowedRoles: ADMIN_MANAGER },
             { label: 'Customer Groups', path: '/customer-groups', allowedRoles: ADMIN_MANAGER },
@@ -59,6 +60,7 @@ const menuItems = [
         allowedRoles: ALL_ROLES,
         children: [
             { label: 'Products', path: '/products', allowedRoles: ADMIN_MANAGER },
+            { label: 'Barcode Generator', path: '/products/barcodes', allowedRoles: ADMIN_MANAGER },
             { label: 'Categories', path: '/categories', allowedRoles: ADMIN_MANAGER },
             { label: 'Brands', path: '/brands', allowedRoles: ADMIN_MANAGER },
             { label: 'Stock Levels', path: '/stock', allowedRoles: ALL_ROLES },
@@ -88,6 +90,7 @@ const menuItems = [
         children: [
             { label: 'Bank Accounts', path: '/bank-accounts', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
             { label: 'Expenses', path: '/expenses', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
+            { label: 'Petty Cash Ledger', path: '/finance/petty-cash', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
             { label: 'Fund Transfers', path: '/fund-transfers', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
             { label: 'Cheque Registry', path: '/cheques', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
             { label: 'Credit Notes', path: '/credit-notes', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
@@ -110,6 +113,7 @@ const menuItems = [
         allowedRoles: ALL_ROLES,
         children: [
             { label: 'Employees', path: '/employees', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
+            { label: 'Salary Structures', path: '/salary-structures', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
             { label: 'Attendance', path: '/attendance', allowedRoles: ALL_ROLES },
             { label: 'Leave Requests', path: '/leaves', allowedRoles: ALL_ROLES },
             { label: 'Payroll Management', path: '/payroll', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
@@ -122,6 +126,7 @@ const menuItems = [
         allowedRoles: ADMIN_MANAGER_ACCOUNTANT,
         children: [
             { label: 'Reports Dashboard', path: '/reports', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
+            { label: 'Targets & Progress', path: '/targets-progress', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
             { label: 'AI Business Analyst', path: '/ai-predictions', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
         ],
     },
@@ -228,7 +233,7 @@ export default function Sidebar({ userRole, isOpen, onClose }) {
                                 <Package className="w-6 h-6 text-white" />
                             </div>
                             <div className="flex items-center gap-2">
-                                <h2 className="font-bold text-gray-900 text-xl tracking-tight">AsipBook</h2>
+                                <h2 className="font-bold text-gray-900 text-xl tracking-tight">Hoorawa POS</h2>
                             </div>
                         </div>
                         <button

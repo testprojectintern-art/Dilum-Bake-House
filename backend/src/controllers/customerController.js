@@ -1,5 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import Customer from '../models/Customer.js';
+import { sendGeneralSms } from '../utils/smsHelper.js';
+
 
 export const createCustomer = asyncHandler(async (req, res) => {
     // Clean up empty string ID fields
@@ -110,5 +112,69 @@ export const toggleCreditHold = asyncHandler(async (req, res) => {
         success: true,
         message: customer.creditStatus.onCreditHold ? 'Customer placed on credit hold' : 'Credit hold removed',
         data: customer,
+    });
+});
+
+/**
+ * POST /api/customers/bulk-sms
+ * Send promotional or campaign bulk SMS to targeted customers
+ */
+export const sendBulkSms = asyncHandler(async (req, res) => {
+    const { message, customerGroupId, status } = req.body;
+
+    if (!message || !message.trim()) {
+        res.status(400);
+        throw new Error('Message content is required');
+    }
+
+    const filter = { deletedAt: null };
+    if (customerGroupId) filter.customerGroupId = customerGroupId;
+    if (status) filter.status = status;
+
+    // Fetch active customers
+    const customers = await Customer.find(filter);
+
+    // Extract valid phone numbers
+    const recipients = [];
+    customers.forEach(cust => {
+        const phone = cust.primaryContact?.phone || cust.primaryContact?.mobile || cust.billingAddress?.phone;
+        if (phone) {
+            recipients.push({
+                id: cust._id,
+                name: cust.displayName,
+                phone: phone.trim()
+            });
+        }
+    });
+
+    if (recipients.length === 0) {
+        return res.status(200).json({
+            success: true,
+            message: 'No customers found with valid phone numbers.',
+            sentCount: 0
+        });
+    }
+
+    // Trigger sending in the background (asynchronous)
+    console.log(`[SMS BULK] Initiating bulk campaign for ${recipients.length} recipients...`);
+    
+    // We run the sending loop asynchronously so it doesn't block HTTP response
+    (async () => {
+        for (const recipient of recipients) {
+            try {
+                // Pause slightly between sends to avoid spamming the gateway
+                await new Promise(resolve => setTimeout(resolve, 200)); 
+                await sendGeneralSms(recipient.phone, message);
+            } catch (err) {
+                console.error(`[SMS BULK ERROR] Failed for recipient ${recipient.name} (${recipient.phone}):`, err);
+            }
+        }
+        console.log(`[SMS BULK] Bulk campaign completed for ${recipients.length} messages.`);
+    })();
+
+    res.json({
+        success: true,
+        message: `Bulk SMS campaign queued successfully for ${recipients.length} customers.`,
+        sentCount: recipients.length
     });
 });

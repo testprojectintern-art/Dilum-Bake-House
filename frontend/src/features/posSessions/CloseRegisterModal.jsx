@@ -22,7 +22,7 @@ export default function CloseRegisterModal({ isOpen, onClose, session }) {
         mutationFn: posSessionsApi.close,
         onSuccess: () => {
             toast.success('Cash Register Closed');
-            queryClient.invalidateQueries(['pos-sessions', 'active']);
+            queryClient.invalidateQueries({ queryKey: ['pos-sessions', 'active'] });
             onClose();
         },
         onError: (err) => toast.error(err.response?.data?.message || 'Failed to close register')

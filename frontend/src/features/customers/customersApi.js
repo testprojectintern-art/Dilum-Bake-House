@@ -9,6 +9,7 @@ export const customersApi = {
     delete: async (id) => (await api.delete(`/customers/${id}`)).data,
     toggleCreditHold: async (id, reason) =>
         (await api.patch(`/customers/${id}/credit-hold`, { reason })).data,
+    sendBulkSms: async (data) => (await api.post('/customers/bulk-sms', data)).data,
 
     // Customer Groups
     listGroups: async (params = {}) => (await api.get('/customer-groups', { params })).data,

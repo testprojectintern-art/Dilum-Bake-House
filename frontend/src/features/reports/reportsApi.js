@@ -34,6 +34,7 @@ export const returnsReportsApi = {
 
 export const financialReportsApi = {
     snapshot: async (params = {}) => (await api.get('/reports/financial/snapshot', { params })).data,
+    netProfit: async (params = {}) => (await api.get('/reports/financial/net-profit-analysis', { params })).data,
 };
 
 export const hrReportsApi = {

@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User as UserIcon, Menu } from 'lucide-react';
+import { LogOut, User as UserIcon, Menu, Sun, Moon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import { authApi } from '../../features/auth/authApi';
@@ -7,6 +8,19 @@ import { authApi } from '../../features/auth/authApi';
 export default function Header({ onToggleSidebar }) {
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
+    const [isDark, setIsDark] = useState(() => {
+        return document.documentElement.classList.contains('dark') || localStorage.getItem('theme') === 'dark';
+    });
+
+    useEffect(() => {
+        if (isDark) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    }, [isDark]);
 
     const handleLogout = async () => {
         try {
@@ -50,6 +64,16 @@ export default function Header({ onToggleSidebar }) {
             </div>
 
             <div className="flex items-center gap-4">
+                {/* Theme toggle button */}
+                <button
+                    onClick={() => setIsDark(!isDark)}
+                    className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                    aria-label="Toggle Theme"
+                    title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                >
+                    {isDark ? <Sun size={20} className="text-amber-500" /> : <Moon size={20} className="text-indigo-600" />}
+                </button>
+
                 <div className="flex items-center gap-3 px-3 py-1.5 bg-gray-50/50 border border-gray-100 rounded-xl">
                     <div className="w-8 h-8 bg-white border border-gray-100 rounded-full flex items-center justify-center shadow-sm">
                         <button onClick={() => navigate('/profile')}>

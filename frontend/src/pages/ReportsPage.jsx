@@ -45,6 +45,7 @@ const reportGroups = [
         color: 'text-emerald-600', bg: 'bg-emerald-50',
         reports: [
             { title: 'Financial Snapshot', description: 'Revenue vs expenses, A/R + A/P aging, cash flow', path: '/reports/financial', icon: DollarSign },
+            { title: 'Net Profit Analysis', description: 'True profit analysis factoring in product costs & expenses', path: '/reports/net-profit-analysis', icon: TrendingUp },
         ],
     },
     {

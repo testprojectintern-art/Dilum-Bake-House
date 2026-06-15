@@ -205,6 +205,23 @@ export default function PosPage() {
         label: `${c.displayName} (${c.customerCode})`,
     }));
 
+    // Auto-add product when search matches exact barcode, productCode, or SKU (for barcode scanner)
+    useEffect(() => {
+        if (!searchQuery) return;
+        const q = searchQuery.trim().toLowerCase();
+        
+        const exactMatch = products.find(p => 
+            p.barcode === searchQuery.trim() ||
+            p.productCode?.toLowerCase() === q ||
+            p.sku?.toLowerCase() === q
+        );
+        
+        if (exactMatch) {
+            addToCart(exactMatch);
+            setSearchQuery('');
+        }
+    }, [searchQuery, products]);
+
     // Cart actions
     const addToCart = (product) => {
         const stock = stockMap.get(product._id);
@@ -596,6 +613,15 @@ export default function PosPage() {
                                 className="w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none border-gray-200"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        if (filteredProducts.length > 0) {
+                                            addToCart(filteredProducts[0]);
+                                            setSearchQuery('');
+                                        }
+                                    }
+                                }}
                             />
                         </div>
                         {/* View toggle */}

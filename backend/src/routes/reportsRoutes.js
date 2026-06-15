@@ -16,6 +16,7 @@ import {
     getReturnsSummary, getDamagesReport,
 } from '../controllers/reports/returnsReportsController.js';
 import { getFinancialSnapshot } from '../controllers/reports/financialReportsController.js';
+import { getNetProfitAnalysis } from '../controllers/reports/netProfitController.js';
 import {
     getHeadcountReport, getAttendanceReport, getLeavePatternsReport, getPayrollSummaryReport,
 } from '../controllers/reports/hrReportsController.js';
@@ -38,6 +39,7 @@ router.get('/damages/summary', fullAccess, getDamagesReport);
 
 // Financial
 router.get('/financial/snapshot', fullAccess, getFinancialSnapshot);
+router.get('/financial/net-profit-analysis', fullAccess, getNetProfitAnalysis);
 router.get('/predictive/analytics', fullAccess, getPredictiveAnalytics);
 
 // HR

@@ -76,3 +76,7 @@ export const useLowStockReport = () => useQuery({
     queryKey: ['lowStockReport'],
     queryFn: inventoryReportsApi.lowStock,
 });
+export const useNetProfitAnalysis = (params = {}) => useQuery({
+    queryKey: ['netProfitAnalysis', params],
+    queryFn: () => financialReportsApi.netProfit(params),
+});

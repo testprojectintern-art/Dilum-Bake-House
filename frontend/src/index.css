@@ -57,3 +57,210 @@ input[type="date"]::-webkit-date-and-time-value {
   display: flex;
   align-items: center;
 }
+
+/* ==========================================================================
+   DARK MODE CUSTOM STYLING (Rich cosmic theme with colorful accents)
+   ========================================================================== */
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #0b0f19 !important; /* Deep cosmic dark blue background */
+  color: #f1f5f9 !important;
+}
+
+/* Sidebar & Header */
+html.dark header, 
+html.dark aside,
+html.dark .bg-white {
+  background-color: #111827 !important; /* Deep dark grey/blue card bg */
+}
+
+html.dark .bg-gray-50 {
+  background-color: #0b0f19 !important; /* Outer page bg */
+}
+
+html.dark .bg-gray-100 {
+  background-color: #1f2937 !important; /* Accent bg */
+}
+
+html.dark .border-gray-50,
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-300 {
+  border-color: #374151 !important; /* Dark borders */
+}
+
+/* Typography */
+html.dark .text-gray-900 {
+  color: #f9fafb !important;
+}
+
+html.dark .text-gray-700 {
+  color: #e5e7eb !important;
+}
+
+html.dark .text-gray-600 {
+  color: #d1d5db !important;
+}
+
+html.dark .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+html.dark .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+/* Table Styling */
+html.dark table {
+  background-color: #111827 !important;
+}
+
+html.dark th {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+html.dark tr:hover {
+  background-color: #1f2937 !important;
+}
+
+/* Forms & Inputs */
+html.dark input, 
+html.dark select, 
+html.dark textarea {
+  background-color: #1f2937 !important;
+  color: #ffffff !important;
+  border-color: #374151 !important;
+}
+
+html.dark input:focus, 
+html.dark select:focus, 
+html.dark textarea:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+
+html.dark input::placeholder {
+  color: #6b7280 !important;
+}
+
+/* Modals */
+html.dark .modal-content,
+html.dark .modal-bg {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+}
+
+/* Dashboard & Cards Accent Elements */
+html.dark .bg-indigo-50 {
+  background-color: rgba(99, 102, 241, 0.15) !important;
+}
+
+html.dark .text-indigo-600 {
+  color: #818cf8 !important;
+}
+
+html.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+}
+
+html.dark .text-emerald-600 {
+  color: #34d399 !important;
+}
+
+html.dark .bg-purple-50 {
+  background-color: rgba(139, 92, 246, 0.15) !important;
+}
+
+html.dark .text-purple-600 {
+  color: #a78bfa !important;
+}
+
+html.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+html.dark .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+html.dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+}
+
+html.dark .text-amber-600 {
+  color: #fbbf24 !important;
+}
+
+html.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+html.dark .text-red-600 {
+  color: #f87171 !important;
+}
+
+/* Custom Scrollbars in Dark Mode */
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #0b0f19;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* ==========================================================================
+   BARCODE PREVIEW OVERRIDES (Always white background / high contrast)
+   ========================================================================== */
+
+.barcode-card-preview,
+html.dark .barcode-card-preview {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #e5e7eb !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Product Name */
+.barcode-card-preview .barcode-name,
+html.dark .barcode-card-preview .barcode-name {
+  color: #111827 !important; /* Always dark grey/black */
+}
+
+/* Product Price */
+.barcode-card-preview .barcode-price,
+html.dark .barcode-card-preview .barcode-price {
+  color: #4338ca !important; /* Always Indigo-700 color */
+}
+
+/* Barcode Bars */
+.barcode-card-preview .barcode-bar,
+html.dark .barcode-card-preview .barcode-bar {
+  background-color: #000000 !important; /* Always black bars */
+}
+
+/* Barcode Value Text */
+.barcode-card-preview .barcode-text,
+html.dark .barcode-card-preview .barcode-text {
+  color: #374151 !important; /* Always dark gray */
+}
+
+/* Card Subtext (e.g. Hoorawa POS) */
+.barcode-card-preview .barcode-subtext,
+html.dark .barcode-card-preview .barcode-subtext {
+  color: #9ca3af !important; /* Always medium-light gray */
+}

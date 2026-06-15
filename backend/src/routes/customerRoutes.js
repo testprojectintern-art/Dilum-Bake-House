@@ -1,7 +1,7 @@
 import express from 'express';
 import {
     createCustomer, getCustomers, getCustomerById,
-    updateCustomer, deleteCustomer, toggleCreditHold,
+    updateCustomer, deleteCustomer, toggleCreditHold, sendBulkSms,
 } from '../controllers/customerController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { validate } from '../middleware/validateMiddleware.js';
@@ -20,6 +20,12 @@ router
         validate(createCustomerSchema),
         createCustomer
     );
+
+router.post(
+    '/bulk-sms',
+    authorize('admin', 'manager', 'cashier', 'accountant'),
+    sendBulkSms
+);
 
 router
     .route('/:id')

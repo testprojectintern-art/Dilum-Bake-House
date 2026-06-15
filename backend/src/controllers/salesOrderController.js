@@ -9,6 +9,7 @@ import {
 } from '../services/stockService.js';
 import StockItem from '../models/StockItem.js';
 import { generateInvoiceFromOrders, updateCustomerBalance } from './invoiceController.js';
+import { sendSalesSms } from '../utils/smsHelper.js';
 
 /**
  * Create Sales Order
@@ -386,6 +387,14 @@ export const createSalesOrder = asyncHandler(async (req, res) => {
         throw new Error(err.message);
     } finally {
         session.endSession();
+    }
+
+    // Trigger SMS sending asynchronously for POS approved sales
+    if (order.source === 'pos' && order.status === 'approved') {
+        const Invoice = mongoose.model('Invoice');
+        Invoice.findOne({ salesOrderIds: order._id }).then((inv) => {
+            sendSalesSms(order, inv);
+        }).catch(err => console.error('Error fetching invoice for SMS:', err));
     }
 
     const populated = await SalesOrder.findById(order._id)

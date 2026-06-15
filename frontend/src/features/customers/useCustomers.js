@@ -73,3 +73,13 @@ export const useCustomerGroups = () => {
         staleTime: 5 * 60 * 1000,
     });
 };
+
+export const useSendBulkSms = () => {
+    return useMutation({
+        mutationFn: customersApi.sendBulkSms,
+        onSuccess: (res) => {
+            toast.success(res.message || 'Bulk SMS campaign sent successfully');
+        },
+        onError: (err) => toast.error(err.response?.data?.message || 'Failed to send bulk SMS'),
+    });
+};

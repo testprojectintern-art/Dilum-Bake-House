@@ -39,7 +39,8 @@ import bankRoutes from './routes/bankRoutes.js';
 import fundTransferRoutes from './routes/fundTransferRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import installmentRoutes from './routes/installmentRoutes.js';
-
+import targetRoutes from './routes/targetRoutes.js';
+import pettyCashRoutes from './routes/pettyCashRoutes.js';
 import reportsRoutes from './routes/reportsRoutes.js';
 
 import { seedDefaults } from './utils/seedDefaults.js';
@@ -113,6 +114,8 @@ app.use('/api/bank-accounts', bankRoutes);
 app.use('/api/fund-transfers', fundTransferRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/installments', installmentRoutes);
+app.use('/api/targets', targetRoutes);
+app.use('/api/petty-cash', pettyCashRoutes);
 
 app.use('/api/reports', reportsRoutes);
 
