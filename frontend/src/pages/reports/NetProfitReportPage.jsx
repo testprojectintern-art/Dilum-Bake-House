@@ -65,7 +65,10 @@ export default function NetProfitReportPage() {
 
     const handleQuickDate = (type) => {
         const now = new Date();
-        if (type === 'this-month') {
+        if (type === 'today') {
+            const todayStr = now.toISOString().split('T')[0];
+            setFilters(f => ({ ...f, startDate: todayStr, endDate: todayStr, groupBy: 'day' }));
+        } else if (type === 'this-month') {
             const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
             const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
             setFilters(f => ({ ...f, startDate: start, endDate: end }));
@@ -147,6 +150,7 @@ export default function NetProfitReportPage() {
                         <label className="block text-xs font-semibold text-gray-500 mb-1">Group By</label>
                         <Select
                             options={[
+                                { value: 'day', label: 'Daily' },
                                 { value: 'month', label: 'Monthly' },
                                 { value: 'year', label: 'Annually' }
                             ]}
@@ -155,6 +159,7 @@ export default function NetProfitReportPage() {
                         />
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
+                        <Button type="button" variant="outline" size="sm" onClick={() => handleQuickDate('today')}>Today</Button>
                         <Button type="button" variant="outline" size="sm" onClick={() => handleQuickDate('this-month')}>This Month</Button>
                         <Button type="button" variant="outline" size="sm" onClick={() => handleQuickDate('last-month')}>Last Month</Button>
                         <Button type="button" variant="outline" size="sm" onClick={() => handleQuickDate('this-year')}>This Year</Button>

@@ -17,8 +17,35 @@ body {
   .print-container,
   .print-container *,
   .print-thermal-container,
-  .print-thermal-container * {
-    visibility: visible;
+  .print-thermal-container *,
+  .print-label-sheet,
+  .print-label-sheet * {
+    visibility: visible !important;
+  }
+
+  /* Hide app shell layout components completely when printing */
+  aside,
+  header,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Reset top-level layout wrapper constraints to prevent page offsets/blank spaces */
+  html,
+  body,
+  #root,
+  #root > div,
+  #root > div > div,
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+    height: auto !important;
+    width: auto !important;
+    min-height: auto !important;
+    position: static !important;
+    box-shadow: none !important;
   }
 
   .print-container {
@@ -40,12 +67,6 @@ body {
     padding: 0;
     box-shadow: none;
   }
-
-  /* Hide app shell when printing */
-  .no-print {
-    display: none !important;
-  }
-
 }
 
 /* Fix native date input styling on iOS/Safari */

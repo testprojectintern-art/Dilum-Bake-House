@@ -52,7 +52,13 @@ export const getNetProfitAnalysis = asyncHandler(async (req, res) => {
 
     // Grouping identifier
     let groupById = null;
-    if (groupBy === 'month') {
+    if (groupBy === 'day') {
+        groupById = {
+            year: { $year: '$invoiceDate' },
+            month: { $month: '$invoiceDate' },
+            day: { $dayOfMonth: '$invoiceDate' }
+        };
+    } else if (groupBy === 'month') {
         groupById = {
             year: { $year: '$invoiceDate' },
             month: { $month: '$invoiceDate' }
@@ -138,7 +144,9 @@ export const getNetProfitAnalysis = asyncHandler(async (req, res) => {
         const netProfit = rev - cogs - itemExpenses;
 
         let label = 'Total';
-        if (groupBy === 'month' && item._id) {
+        if (groupBy === 'day' && item._id) {
+            label = `${item._id.year}-${String(item._id.month).padStart(2, '0')}-${String(item._id.day).padStart(2, '0')}`;
+        } else if (groupBy === 'month' && item._id) {
             label = `${item._id.year}-${String(item._id.month).padStart(2, '0')}`;
         } else if (groupBy === 'year' && item._id) {
             label = `${item._id.year}`;
