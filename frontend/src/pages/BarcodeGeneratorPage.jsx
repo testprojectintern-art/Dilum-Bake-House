@@ -16,16 +16,20 @@ export default function BarcodeGeneratorPage() {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [quantity, setQuantity] = useState(12);
     const [labels, setLabels] = useState([]); // Array of { product, qty }
-    const [printFormat, setPrintFormat] = useState('roll_50_30');
-    const [customWidth, setCustomWidth] = useState(50);
-    const [customHeight, setCustomHeight] = useState(30);
+    const [printFormat, setPrintFormat] = useState('roll_30_25'); // Default to user's printer size
+    const [customWidth, setCustomWidth] = useState(30);
+    const [customHeight, setCustomHeight] = useState(25);
 
     // Compute active size variables
-    let widthVal = 50;
-    let heightVal = 30;
+    let widthVal = 30;
+    let heightVal = 25;
     let isRoll = true;
 
-    if (printFormat === 'roll_50_30') {
+    if (printFormat === 'roll_30_25') {
+        widthVal = 30;
+        heightVal = 25;
+        isRoll = true;
+    } else if (printFormat === 'roll_50_30') {
         widthVal = 50;
         heightVal = 30;
         isRoll = true;
@@ -177,6 +181,7 @@ export default function BarcodeGeneratorPage() {
                                         onChange={(e) => setPrintFormat(e.target.value)}
                                         className="w-full text-xs border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                                     >
+                                        <option value="roll_30_25">Label Roll (30mm x 25mm) - Recommended</option>
                                         <option value="roll_50_30">Label Roll (50mm x 30mm) - Standard</option>
                                         <option value="roll_38_25">Label Roll (38mm x 25mm) - Small</option>
                                         <option value="roll_custom">Custom Label Roll (Specify size)</option>
@@ -295,21 +300,39 @@ export default function BarcodeGeneratorPage() {
                                         <p className="barcode-price text-[9px] font-bold text-indigo-700 leading-none mt-0.5">{fmt(p.basePrice)}</p>
                                     </div>
                                     <div className="flex flex-col items-center my-1 w-full">
-                                        {/* Simulated barcode bars */}
-                                        <div className="flex justify-between items-end h-8 w-full max-w-[90px] overflow-hidden opacity-85">
-                                            {[...p.barcode || '2000000000000'].map((digit, i) => {
-                                                const thickness = (parseInt(digit) % 3) + 1;
-                                                return (
-                                                    <div 
-                                                        key={i} 
-                                                        className="barcode-bar bg-black" 
-                                                        style={{ 
-                                                            width: `${thickness}px`, 
-                                                            height: i % 3 === 0 ? '100%' : '85%' 
-                                                        }} 
-                                                    />
-                                                );
-                                            })}
+                                        {/* Simulated barcode bars (Vector SVG) */}
+                                        <div className="h-8 w-full max-w-[90px] overflow-hidden opacity-85">
+                                            <svg 
+                                                width="100%" 
+                                                height="100%" 
+                                                viewBox="0 0 100 30" 
+                                                preserveAspectRatio="none"
+                                            >
+                                                {(() => {
+                                                    const barcodeStr = p.barcode || '2000000000000';
+                                                    const digits = [...barcodeStr];
+                                                    const totalBars = digits.length;
+                                                    let currentX = 2;
+                                                    const step = 96 / totalBars;
+                                                    return digits.map((digit, i) => {
+                                                        const thickness = ((parseInt(digit) || 0) % 3) + 1;
+                                                        const barWidth = thickness * 0.8;
+                                                        const barHeight = i % 3 === 0 ? 30 : 25;
+                                                        const rect = (
+                                                            <rect 
+                                                                key={i}
+                                                                x={currentX}
+                                                                y={0}
+                                                                width={barWidth}
+                                                                height={barHeight}
+                                                                fill="black"
+                                                            />
+                                                        );
+                                                        currentX += step;
+                                                        return rect;
+                                                    });
+                                                })()}
+                                            </svg>
                                         </div>
                                         <span className="barcode-text text-[8px] font-mono tracking-widest mt-0.5 text-gray-700">{p.barcode}</span>
                                     </div>
@@ -331,23 +354,41 @@ export default function BarcodeGeneratorPage() {
                                 <span className="label-price">{fmt(p.basePrice)}</span>
                             </div>
                             <div className="label-barcode-container">
-                                <div className="simulated-barcode">
-                                    {[...p.barcode || '2000000000000'].map((digit, i) => {
-                                        const thickness = (parseInt(digit) % 3) + 1;
-                                        return (
-                                            <div 
-                                                key={i} 
-                                                className="barcode-bar" 
-                                                style={{ 
-                                                    width: `${thickness}px`, 
-                                                    height: i % 4 === 0 ? '100%' : '88%' 
-                                                }} 
-                                            />
-                                        );
-                                    })}
-                                </div>
-                                <span className="label-code-text">{p.barcode}</span>
-                            </div>
+                                 <div className="simulated-barcode">
+                                     <svg 
+                                         width="100%" 
+                                         height="100%" 
+                                         viewBox="0 0 100 30" 
+                                         preserveAspectRatio="none"
+                                     >
+                                         {(() => {
+                                             const barcodeStr = p.barcode || '2000000000000';
+                                             const digits = [...barcodeStr];
+                                             const totalBars = digits.length;
+                                             let currentX = 2;
+                                             const step = 96 / totalBars;
+                                             return digits.map((digit, i) => {
+                                                 const thickness = ((parseInt(digit) || 0) % 3) + 1;
+                                                 const barWidth = thickness * 0.8;
+                                                 const barHeight = i % 4 === 0 ? 30 : 26;
+                                                 const rect = (
+                                                     <rect 
+                                                         key={i}
+                                                         x={currentX}
+                                                         y={0}
+                                                         width={barWidth}
+                                                         height={barHeight}
+                                                         fill="black"
+                                                     />
+                                                 );
+                                                 currentX += step;
+                                                 return rect;
+                                             });
+                                         })()}
+                                     </svg>
+                                 </div>
+                                 <span className="label-code-text">{p.barcode}</span>
+                             </div>
                             <div className="label-footer">Hoorawa Watch Pvt Ltd</div>
                         </div>
                     ))}
@@ -406,7 +447,7 @@ export default function BarcodeGeneratorPage() {
                         width: ${isRoll ? `${widthVal}mm` : '100%'};
                         height: ${heightVal}mm;
                         max-width: ${widthVal}mm;
-                        padding: ${heightVal < 28 ? '1mm' : '1.5mm'};
+                        padding: ${widthVal < 35 ? '0.5mm 1mm' : heightVal < 28 ? '1mm' : '1.5mm'};
                         display: flex;
                         flex-direction: column;
                         justify-content: space-between;
@@ -428,7 +469,7 @@ export default function BarcodeGeneratorPage() {
                         line-height: 1.1;
                     }
                     .label-title {
-                        font-size: ${heightVal < 28 ? '7pt' : '8pt'};
+                        font-size: ${widthVal < 35 ? '5.5pt' : heightVal < 28 ? '7pt' : '8pt'};
                         font-weight: bold;
                         color: black;
                         white-space: nowrap;
@@ -438,7 +479,7 @@ export default function BarcodeGeneratorPage() {
                         text-transform: uppercase;
                     }
                     .label-price {
-                        font-size: ${heightVal < 28 ? '7pt' : '8pt'};
+                        font-size: ${widthVal < 35 ? '5.5pt' : heightVal < 28 ? '7pt' : '8pt'};
                         font-weight: 800;
                         color: black;
                     }
@@ -452,8 +493,8 @@ export default function BarcodeGeneratorPage() {
                         display: flex;
                         justify-content: space-between;
                         align-items: end;
-                        height: ${heightVal < 28 ? '7mm' : '9mm'};
-                        width: 85%;
+                        height: ${heightVal < 26 ? '5.5mm' : heightVal < 28 ? '7mm' : '9mm'};
+                        width: ${widthVal < 35 ? '92%' : '85%'};
                         overflow: hidden;
                     }
                     .barcode-bar {
@@ -462,16 +503,16 @@ export default function BarcodeGeneratorPage() {
                         print-color-adjust: exact;
                     }
                     .label-code-text {
-                        font-size: ${heightVal < 28 ? '5.5pt' : '6pt'};
+                        font-size: ${widthVal < 35 ? '4.8pt' : heightVal < 28 ? '5.5pt' : '6pt'};
                         font-family: monospace;
-                        letter-spacing: 1.2px;
+                        letter-spacing: ${widthVal < 35 ? '0.2px' : '1.2px'};
                         margin-top: 0.3mm;
                         color: black;
                     }
                     .label-footer {
-                        font-size: ${heightVal < 28 ? '4.5pt' : '5pt'};
+                        font-size: ${widthVal < 35 ? '4pt' : heightVal < 28 ? '4.5pt' : '5pt'};
                         font-family: sans-serif;
-                        letter-spacing: 0.3px;
+                        letter-spacing: ${widthVal < 35 ? '0.1px' : '0.3px'};
                         color: #777;
                         text-transform: uppercase;
                     }
