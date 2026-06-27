@@ -385,6 +385,7 @@ export const createSalesOrder = asyncHandler(async (req, res) => {
                     invoice.amountPaid = invoice.grandTotal;
                     invoice.balanceDue = 0;
                     invoice.paymentStatus = 'paid';
+                    invoice.status = 'paid';
                     invoice.fullyPaidAt = new Date();
                     invoice.cashReceived = paymentMethod === 'cash' ? order.cashReceived : undefined;
                     invoice.changeReturned = paymentMethod === 'cash' ? order.changeReturned : undefined;

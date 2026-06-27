@@ -115,18 +115,18 @@ export default function InvoicesPage() {
             {/* Aging summary */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4 mb-6">
                 {[
-                    { key: 'current', label: 'Current', color: 'bg-green-50 text-green-700 border-green-200' },
-                    { key: '1_30', label: '1-30 days', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-                    { key: '31_60', label: '31-60 days', color: 'bg-orange-50 text-orange-700 border-orange-200' },
-                    { key: '61_90', label: '61-90 days', color: 'bg-red-50 text-red-700 border-red-200' },
-                    { key: '91_plus', label: '90+ days', color: 'bg-red-100 text-red-800 border-red-300' },
+                    { key: 'current', label: 'Current', textColor: 'text-green-600', borderColor: 'border-l-green-500' },
+                    { key: '1_30', label: '1-30 days', textColor: 'text-yellow-600', borderColor: 'border-l-yellow-500' },
+                    { key: '31_60', label: '31-60 days', textColor: 'text-orange-600', borderColor: 'border-l-orange-500' },
+                    { key: '61_90', label: '61-90 days', textColor: 'text-red-600', borderColor: 'border-l-red-500' },
+                    { key: '91_plus', label: '90+ days', textColor: 'text-red-800', borderColor: 'border-l-red-700' },
                 ].map((b) => (
                     <button key={b.key}
                         onClick={() => setFilters((f) => ({ ...f, agingBucket: b.key, page: 1 }))}
-                        className={`border rounded-lg p-3 text-left ${b.color} ${filters.agingBucket === b.key ? 'ring-2 ring-offset-1 ring-primary-500' : ''}`}>
-                        <p className="text-xs">{b.label}</p>
-                        <p className="text-lg font-bold">{fmt(aging.buckets?.[b.key] || 0)}</p>
-                        <p className="text-xs opacity-75">{aging.counts?.[b.key] || 0} invoices</p>
+                        className={`bg-white border rounded-lg p-3 text-left border-l-4 ${b.borderColor} ${filters.agingBucket === b.key ? 'ring-2 ring-offset-1 ring-primary-500' : ''}`}>
+                        <p className="text-xs text-gray-500 font-medium">{b.label}</p>
+                        <p className={`text-lg font-bold ${b.textColor}`}>{fmt(aging.buckets?.[b.key] || 0)}</p>
+                        <p className="text-xs text-gray-400">{aging.counts?.[b.key] || 0} invoices</p>
                     </button>
                 ))}
             </div>

@@ -61,18 +61,22 @@ export default function InvoiceDetailPage() {
     if (inv.status === 'approved' && canSend) {
         actions.push({ label: 'Mark Sent', icon: Send, variant: 'primary', status: 'sent' });
     }
-    if (['approved', 'sent'].includes(inv.status) && inv.paymentStatus !== 'paid' && canCancel) {
-        actions.push({ label: 'Cancel', icon: Ban, variant: 'danger', status: 'cancelled', needsReason: true });
+    if (canCancel && inv.paymentStatus !== 'cancelled' && inv.paymentStatus !== 'void') {
+        if (inv.status === 'paid') {
+            actions.push({ label: 'Void Invoice', icon: Ban, variant: 'danger', status: 'void', needsReason: true });
+        } else {
+            actions.push({ label: 'Cancel', icon: Ban, variant: 'danger', status: 'cancelled', needsReason: true });
+        }
     }
 
     const handleAction = async () => {
-        if (action.status === 'cancelled') {
+        if (action.status === 'cancelled' || action.status === 'void') {
             requestAdminVerify(async () => {
                 await changeStatus.mutateAsync({ id: inv._id, status: action.status, reason, restock });
                 setAction(null); setReason(''); setRestock(true);
             }, {
-                title: "Authorize Cancellation",
-                message: `Please verify admin credentials to cancel invoice ${inv.invoiceNumber}.`
+                title: action.status === 'void' ? "Authorize Voiding" : "Authorize Cancellation",
+                message: `Please verify admin credentials to ${action.status === 'void' ? 'void' : 'cancel'} invoice ${inv.invoiceNumber}.`
             });
         } else {
             await changeStatus.mutateAsync({ id: inv._id, status: action.status, reason });
@@ -326,7 +330,7 @@ export default function InvoiceDetailPage() {
                 onConfirm={handleAction}
                 title={action?.label}
                 message={
-                    action?.status === 'cancelled' ? (
+                    (action?.status === 'cancelled' || action?.status === 'void') ? (
                         <div className="space-y-3">
                             <div>
                                 <p className="mb-1 text-sm font-medium">Please provide a reason:</p>

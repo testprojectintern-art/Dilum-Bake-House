@@ -1,0 +1,11 @@
+git remote remove origin
+git remote add origin https://github.com/suranivd/Hoorawa-POS.git
+git remote -v
+git push -f origin main
+
+https://hoorawa-pos-s6tr.onrender.com
+https://hoorawa-pos-s6tr.onrender.com
+
+git remote add dvd-origin https://github.com/DVD03/Hoorawa-POS.git
+git remote -v
+git push -f dvd-origin main
