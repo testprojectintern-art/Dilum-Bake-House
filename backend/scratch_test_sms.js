@@ -23,9 +23,9 @@ const credentials = {
     userID: 1927,
     apiKey: "3df0dbae-24c7-42f6-80fb-925c8ca35b50",
     api_key: "3df0dbae-24c7-42f6-80fb-925c8ca35b50",
-    senderId: "SMSlenzDEMO",
-    sender_id: "SMSlenzDEMO",
-    senderID: "SMSlenzDEMO",
+    senderId: "HoorawaLK",
+    sender_id: "HoorawaLK",
+    senderID: "HoorawaLK",
     recipient: "94777498608",
     recipient_number: "94777498608",
     to: "94777498608",
@@ -68,7 +68,7 @@ async function testAll() {
             const params = new URLSearchParams({
                 user_id: '1927',
                 api_key: '3df0dbae-24c7-42f6-80fb-925c8ca35b50',
-                sender_id: 'SMSlenzDEMO',
+                sender_id: 'HoorawaLK',
                 recipient: '94777498608',
                 to: '94777498608',
                 message: 'Hoorawa POS Test GET!'

@@ -4,6 +4,7 @@ import Bill from '../../models/Bill.js';
 import Payment from '../../models/Payment.js';
 import Customer from '../../models/Customer.js';
 import Expense from '../../models/Expense.js';
+import CustomerReturn from '../../models/CustomerReturn.js';
 import { updateInvoiceAging } from '../invoiceController.js';
 import { updateBillAging } from '../billController.js';
 
@@ -19,9 +20,9 @@ export const getFinancialSnapshot = asyncHandler(async (req, res) => {
     const end = endDate ? new Date(endDate) : new Date();
     end.setHours(23, 59, 59, 999);
 
-    const [revenue, bills, generalExpenses, collected, paymentsPaid, generalExpensesPaid, arTotal, apTotal] = await Promise.all([
+    const [revenue, bills, generalExpenses, collected, paymentsPaid, generalExpensesPaid, arTotal, apTotal, customerReturns] = await Promise.all([
         Invoice.aggregate([
-            { $match: { deletedAt: null, invoiceDate: { $gte: start, $lte: end } } },
+            { $match: { deletedAt: null, status: { $nin: ['draft', 'void', 'cancelled'] }, invoiceDate: { $gte: start, $lte: end } } },
             { $group: { _id: null, total: { $sum: '$grandTotal' } } },
         ]),
         Bill.aggregate([
@@ -112,9 +113,16 @@ export const getFinancialSnapshot = asyncHandler(async (req, res) => {
                 },
             },
         ]),
+        CustomerReturn.aggregate([
+            { $match: { deletedAt: null, status: { $in: ['processed', 'completed'] }, requestDate: { $gte: start, $lte: end } } },
+            { $group: { _id: null, total: { $sum: '$netRefundAmount' } } }
+        ])
     ]);
 
-    const revenueTotal = revenue[0]?.total || 0;
+    const grossRevenueTotal = revenue[0]?.total || 0;
+    const returnsTotal = customerReturns[0]?.total || 0;
+    const revenueTotal = grossRevenueTotal - returnsTotal;
+    
     const billsTotal = bills[0]?.total || 0;
     const generalExpensesTotal = generalExpenses[0]?.total || 0;
     const expensesTotal = billsTotal + generalExpensesTotal;

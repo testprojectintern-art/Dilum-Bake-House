@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import Invoice from '../models/Invoice.js';
 import Expense from '../models/Expense.js';
 import Product from '../models/Product.js';
+import CustomerReturn from '../models/CustomerReturn.js';
 
 export const getProfitAndLoss = asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
@@ -17,9 +18,18 @@ export const getProfitAndLoss = asyncHandler(async (req, res) => {
 
     const invoices = await Invoice.find(invoiceFilter).populate('items.productId');
 
+    const returnFilter = { status: { $in: ['processed', 'completed'] }, deletedAt: null };
+    if (Object.keys(dateFilter).length > 0) {
+        returnFilter.requestDate = { ...dateFilter };
+    }
+    const customerReturns = await CustomerReturn.find(returnFilter);
+    let totalReturns = 0;
+    customerReturns.forEach(ret => {
+        totalReturns += ret.netRefundAmount || 0;
+    });
+
     let grossSales = 0;
     let totalDiscounts = 0;
-    let totalReturns = 0; // if you have returns
     let cogs = 0;
 
     invoices.forEach(inv => {

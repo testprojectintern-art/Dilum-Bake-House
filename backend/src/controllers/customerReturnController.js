@@ -170,18 +170,60 @@ export const rejectReturn = asyncHandler(async (req, res) => {
  * Mark goods as received (physically back in warehouse)
  */
 export const receiveReturn = asyncHandler(async (req, res) => {
-    const { warehouseId, receivedDate } = req.body;
+    const { warehouseId, receivedDate, autoRestock } = req.body;
     const ret = await CustomerReturn.findById(req.params.id);
     if (!ret) { res.status(404); throw new Error('Return not found'); }
     if (ret.status !== 'approved') {
         res.status(400); throw new Error('Return must be approved before receiving goods');
     }
 
-    ret.status = 'received';
     ret.returnToWarehouseId = warehouseId;
     ret.receivedDate = receivedDate ? new Date(receivedDate) : new Date();
     ret.receivedBy = req.user._id;
-    await ret.save();
+
+    if (autoRestock) {
+        ret.status = 'processed';
+        ret.inspectedBy = req.user._id;
+        ret.refundMethod = 'credit_note';
+
+        const session = await mongoose.startSession();
+        try {
+            await session.withTransaction(async () => {
+                for (const item of ret.items) {
+                    item.condition = 'resellable';
+                    item.disposition = 'restock';
+                    item.refundAmount = item.refundAmount || +(item.quantityReturned * item.unitPrice).toFixed(2);
+                    item.refundable = true;
+
+                    const product = await Product.findById(item.productId).session(session);
+                    const result = await increaseStock({
+                        productId: item.productId,
+                        warehouseId,
+                        quantity: item.quantityReturned,
+                        costPerUnit: product?.costs?.averageCost || product?.costs?.lastPurchaseCost || item.unitPrice,
+                        movementType: 'sale_return',
+                        sourceDocument: {
+                            type: 'customer_return',
+                            id: ret._id,
+                            number: ret.rmaNumber,
+                        },
+                        reason: `Auto-restocked from return ${ret.rmaNumber}`,
+                        userId: req.user._id,
+                        session,
+                    });
+                    item.stockMovementId = result.movement._id;
+                    item.restockedAt = new Date();
+                    item.restockedToWarehouseId = warehouseId;
+                }
+                await ret.save({ session });
+            });
+        } finally {
+            session.endSession();
+        }
+    } else {
+        ret.status = 'received';
+        await ret.save();
+    }
 
     res.json({ success: true, data: ret });
 });

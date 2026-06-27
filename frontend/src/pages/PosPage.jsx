@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -61,6 +61,7 @@ export default function PosPage() {
     const [orderDiscountPercent, setOrderDiscountPercent] = useState(0);
     const [orderDiscountAmount, setOrderDiscountAmount] = useState(0);
     const createCustomer = useCreateCustomer();
+    const checkoutPendingRef = useRef(false);
 
     // Modals
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
@@ -350,10 +351,13 @@ export default function PosPage() {
     const fmt = (n) => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', minimumFractionDigits: 2 }).format(n || 0);
 
     const handleCheckout = async (saveAsDraft = false, cashAmt = null, changeAmt = null, overridePaymentMethod = null) => {
+        if (checkoutPendingRef.current) return;
+
         let finalCustomerId = customerId;
 
         // Auto-add customer if not selected but name typed
         if (!finalCustomerId && customerSearch) {
+            checkoutPendingRef.current = true;
             try {
                 const newCust = await createCustomer.mutateAsync({
                     displayName: customerSearch,
@@ -368,6 +372,7 @@ export default function PosPage() {
             } catch (err) {
                 console.error('Auto-create customer error:', err);
                 toast.error(err.response?.data?.message || err.message || 'Failed to auto-create customer');
+                checkoutPendingRef.current = false;
                 return;
             }
         }
@@ -383,9 +388,11 @@ export default function PosPage() {
             setCalculatorCashReceived('');
             setCalculatorChangeReturned(0);
             setIsCalculatorModalOpen(true);
+            checkoutPendingRef.current = false;
             return;
         }
 
+        checkoutPendingRef.current = true;
         const payload = {
             customerId: finalCustomerId,
             sourceWarehouseId,
@@ -469,6 +476,8 @@ export default function PosPage() {
             }
         } catch (err) {
             console.error('Checkout failed:', err);
+        } finally {
+            checkoutPendingRef.current = false;
         }
     };
 

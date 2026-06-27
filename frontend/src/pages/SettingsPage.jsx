@@ -19,6 +19,7 @@ export default function SettingsPage() {
         website: '',
         taxRegistrationNumber: '',
         receiptFooterMessage: '',
+        logo: '',
     });
 
     useEffect(() => {
@@ -32,12 +33,32 @@ export default function SettingsPage() {
                 website: s.website || '',
                 taxRegistrationNumber: s.taxRegistrationNumber || '',
                 receiptFooterMessage: s.receiptFooterMessage || '',
+                logo: s.logo || '',
             });
         }
     }, [settingsRes]);
 
     const handleChange = (e) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 1024 * 1024) { // 1MB limit
+                toast.error('Image size should be less than 1MB');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(prev => ({ ...prev, logo: reader.result }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveLogo = () => {
+        setFormData(prev => ({ ...prev, logo: '' }));
     };
 
     const handleSubmit = async (e) => {
@@ -137,6 +158,36 @@ export default function SettingsPage() {
                 <div className="bg-white rounded-xl shadow-sm border p-6">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Company Logo</label>
+                                <div className="flex items-center gap-6">
+                                    <div className="border border-gray-300 rounded-lg p-2 w-32 h-32 flex items-center justify-center bg-gray-50 overflow-hidden relative group">
+                                        {formData.logo ? (
+                                            <img src={formData.logo} alt="Company Logo" className="max-w-full max-h-full object-contain" />
+                                        ) : (
+                                            <div className="text-center text-xs text-gray-400">No logo uploaded</div>
+                                        )}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex gap-2">
+                                            <label className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer shadow-sm">
+                                                Choose Logo
+                                                <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+                                            </label>
+                                            {formData.logo && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleRemoveLogo}
+                                                    className="px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm font-medium hover:bg-red-100"
+                                                >
+                                                    Remove
+                                                </button>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-gray-500">Square or rectangular logo under 1MB is recommended. Will print on POS receipts.</p>
+                                    </div>
+                                </div>
+                            </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
                                 <input

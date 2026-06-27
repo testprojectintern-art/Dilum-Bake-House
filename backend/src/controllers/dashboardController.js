@@ -36,14 +36,15 @@ export const getDashboardKpis = asyncHandler(async (req, res) => {
         currentMonthExpenses, lastMonthExpenses,
         currentMonthIn, lastMonthIn,
         currentMonthOut, lastMonthOut,
-        currentMonthExpensesPaid, lastMonthExpensesPaid
+        currentMonthExpensesPaid, lastMonthExpensesPaid,
+        currentMonthReturns, lastMonthReturns
     ] = await Promise.all([
         Invoice.aggregate([
-            { $match: { deletedAt: null, invoiceDate: { $gte: startOfMonth, $lt: tomorrow } } },
+            { $match: { deletedAt: null, status: { $nin: ['draft', 'void', 'cancelled'] }, invoiceDate: { $gte: startOfMonth, $lt: tomorrow } } },
             { $group: { _id: null, total: { $sum: '$grandTotal' }, count: { $sum: 1 } } },
         ]),
         Invoice.aggregate([
-            { $match: { deletedAt: null, invoiceDate: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+            { $match: { deletedAt: null, status: { $nin: ['draft', 'void', 'cancelled'] }, invoiceDate: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
             { $group: { _id: null, total: { $sum: '$grandTotal' }, count: { $sum: 1 } } },
         ]),
         Bill.aggregate([
@@ -86,10 +87,23 @@ export const getDashboardKpis = asyncHandler(async (req, res) => {
             { $match: { deletedAt: null, status: 'paid', date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
             { $group: { _id: null, total: { $sum: '$amount' } } },
         ]),
+        CustomerReturn.aggregate([
+            { $match: { deletedAt: null, status: { $in: ['processed', 'completed'] }, requestDate: { $gte: startOfMonth, $lt: tomorrow } } },
+            { $group: { _id: null, total: { $sum: '$netRefundAmount' } } },
+        ]),
+        CustomerReturn.aggregate([
+            { $match: { deletedAt: null, status: { $in: ['processed', 'completed'] }, requestDate: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+            { $group: { _id: null, total: { $sum: '$netRefundAmount' } } },
+        ]),
     ]);
 
-    const revenueThisMonth = currentMonthInvoices[0]?.total || 0;
-    const revenueLastMonth = lastMonthInvoices[0]?.total || 0;
+    const grossRevenueThisMonth = currentMonthInvoices[0]?.total || 0;
+    const grossRevenueLastMonth = lastMonthInvoices[0]?.total || 0;
+    const returnsThisMonthAmt = currentMonthReturns[0]?.total || 0;
+    const returnsLastMonthAmt = lastMonthReturns[0]?.total || 0;
+
+    const revenueThisMonth = grossRevenueThisMonth - returnsThisMonthAmt;
+    const revenueLastMonth = grossRevenueLastMonth - returnsLastMonthAmt;
     const revenueGrowth = revenueLastMonth > 0
         ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth * 100).toFixed(1)
         : 0;

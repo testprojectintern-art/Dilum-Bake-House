@@ -20,8 +20,12 @@ const clearDatabase = async () => {
                 console.log('Skipping "users" collection (keeping logins).');
                 continue;
             }
-            console.log(`Clearing collection: ${name}`);
-            await mongoose.connection.db.collection(name).deleteMany({});
+            console.log(`Dropping collection: ${name}`);
+            try {
+                await mongoose.connection.db.collection(name).drop();
+            } catch (err) {
+                console.log(`Could not drop ${name}: ${err.message}`);
+            }
         }
 
         console.log('✓ Database cleared successfully (except users).');

@@ -30,6 +30,7 @@ export default function InvoiceDetailPage() {
     const [action, setAction] = useState(null);
     const [reason, setReason] = useState('');
     const [printFormat, setPrintFormat] = useState('a4');
+    const [restock, setRestock] = useState(true);
 
     const { data, isLoading } = useInvoice(id);
     const changeStatus = useChangeInvoiceStatus();
@@ -67,8 +68,8 @@ export default function InvoiceDetailPage() {
     const handleAction = async () => {
         if (action.status === 'cancelled') {
             requestAdminVerify(async () => {
-                await changeStatus.mutateAsync({ id: inv._id, status: action.status, reason });
-                setAction(null); setReason('');
+                await changeStatus.mutateAsync({ id: inv._id, status: action.status, reason, restock });
+                setAction(null); setReason(''); setRestock(true);
             }, {
                 title: "Authorize Cancellation",
                 message: `Please verify admin credentials to cancel invoice ${inv.invoiceNumber}.`
@@ -321,15 +322,21 @@ export default function InvoiceDetailPage() {
 
             <ConfirmDialog
                 isOpen={!!action}
-                onClose={() => { setAction(null); setReason(''); }}
+                onClose={() => { setAction(null); setReason(''); setRestock(true); }}
                 onConfirm={handleAction}
                 title={action?.label}
                 message={
-                    action?.needsReason ? (
-                        <div>
-                            <p className="mb-3">Please provide a reason:</p>
-                            <textarea rows={3} className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                                value={reason} onChange={(e) => setReason(e.target.value)} />
+                    action?.status === 'cancelled' ? (
+                        <div className="space-y-3">
+                            <div>
+                                <p className="mb-1 text-sm font-medium">Please provide a reason:</p>
+                                <textarea rows={3} className="w-full px-3 py-2 border border-gray-300 rounded text-sm outline-none focus:ring-1 focus:ring-primary-500"
+                                    value={reason} onChange={(e) => setReason(e.target.value)} />
+                            </div>
+                            <label className="flex items-center gap-2 text-sm select-none cursor-pointer text-gray-700">
+                                <input type="checkbox" checked={restock} onChange={(e) => setRestock(e.target.checked)} className="rounded text-primary-600 focus:ring-primary-500" />
+                                Add items back to warehouse stock (Restock)
+                            </label>
                         </div>
                     ) : `${action?.label} this invoice?`
                 }

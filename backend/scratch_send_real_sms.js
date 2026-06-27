@@ -6,7 +6,7 @@ async function sendRealSms() {
     const params = new URLSearchParams({
         user_id: '1927',
         api_key: '3df0dbae-24c7-42f6-80fb-925c8ca35b50',
-        sender_id: 'SMSlenzDEMO',
+        sender_id: 'HoorawaLK',
         contact: '+94777498608',
         message: 'Hoorawa POS integration test message!'
     });

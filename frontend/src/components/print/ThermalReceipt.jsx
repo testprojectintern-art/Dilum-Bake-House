@@ -18,16 +18,16 @@ const ThermalReceipt = forwardRef(({ invoice, payments = [], companyInfo: propCo
     
     if (!invoice) return null;
 
-    // Use settings from DB, or fallback to props, or fallback to defaults
     const s = settingsRes?.data || {};
-    const companyInfo = propCompanyInfo?.name ? propCompanyInfo : {
-        name: s.companyName || 'YOUR COMPANY NAME',
-        address: s.address || 'YOUR STREET, CITY',
-        phone: s.phone || '+94 11 XXX XXXX',
-        taxNumber: s.taxRegistrationNumber,
-        email: s.email,
-        website: s.website,
-        footerMessage: s.receiptFooterMessage || 'THANK YOU FOR YOUR BUSINESS!\nPLEASE VISIT AGAIN.'
+    const companyInfo = {
+        name: s.companyName || propCompanyInfo?.name || 'YOUR COMPANY NAME',
+        address: s.address || propCompanyInfo?.address || 'YOUR STREET, CITY',
+        phone: s.phone || propCompanyInfo?.phone || '+94 11 XXX XXXX',
+        taxNumber: s.taxRegistrationNumber || propCompanyInfo?.taxNumber,
+        email: s.email || propCompanyInfo?.email,
+        website: s.website || propCompanyInfo?.website,
+        logo: s.logo || propCompanyInfo?.logo || null,
+        footerMessage: s.receiptFooterMessage || propCompanyInfo?.footerMessage || 'THANK YOU FOR YOUR BUSINESS!\nPLEASE VISIT AGAIN.'
     };
 
     const customer = invoice.customerSnapshot || {};

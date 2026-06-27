@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import toast from 'react-hot-toast';
 
 import Modal from '../../components/ui/Modal';
@@ -24,6 +24,8 @@ export default function QuickCreateCustomerModal({ isOpen, onClose, onCreated, i
         creditLimit: 0,
         creditDays: 0,
     });
+
+    const submittingRef = useRef(false);
 
     useEffect(() => {
         if (initialData && isOpen) {
@@ -56,7 +58,9 @@ export default function QuickCreateCustomerModal({ isOpen, onClose, onCreated, i
     const submit = async () => {
         if (!form.displayName) { toast.error('Customer name required'); return; }
         if (!form.phone && !form.email) { toast.error('Phone or email required'); return; }
+        if (submittingRef.current) return;
 
+        submittingRef.current = true;
         try {
             const payload = {
                 displayName: form.displayName,
@@ -91,7 +95,11 @@ export default function QuickCreateCustomerModal({ isOpen, onClose, onCreated, i
 
             onCreated?.(result.data);
             onClose();
-        } catch { }
+        } catch (err) {
+            console.error('Customer creation error:', err);
+        } finally {
+            submittingRef.current = false;
+        }
     };
 
     const isPending = createMutation.isPending || updateMutation.isPending;

@@ -51,7 +51,7 @@ export const sendSalesSms = async (order, invoice) => {
         const params = new URLSearchParams({
             user_id: '1927',
             api_key: '3df0dbae-24c7-42f6-80fb-925c8ca35b50',
-            sender_id: 'SMSlenzDEMO',
+            sender_id: 'HoorawaLK',
             contact: phone,
             message: message
         });
@@ -95,7 +95,7 @@ export const sendGeneralSms = async (phone, message) => {
         const params = new URLSearchParams({
             user_id: '1927',
             api_key: '3df0dbae-24c7-42f6-80fb-925c8ca35b50',
-            sender_id: 'SMSlenzDEMO',
+            sender_id: 'HoorawaLK',
             contact: normalizedPhone,
             message: message
         });

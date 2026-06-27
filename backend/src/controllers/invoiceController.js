@@ -4,6 +4,8 @@ import Invoice from '../models/Invoice.js';
 import Customer from '../models/Customer.js';
 import SalesOrder from '../models/SalesOrder.js';
 import SerialNumber from '../models/SerialNumber.js';
+import { increaseStock } from '../services/stockService.js';
+import Warehouse from '../models/Warehouse.js';
 
 /**
  * Helper: recalculate customer credit balance
@@ -441,7 +443,7 @@ export const getAgingSummary = asyncHandler(async (req, res) => {
  * PATCH /api/invoices/:id/status
  */
 export const changeInvoiceStatus = asyncHandler(async (req, res) => {
-    const { status, reason } = req.body;
+    const { status, reason, restock } = req.body;
     const invoice = await Invoice.findById(req.params.id);
     if (!invoice) { res.status(404); throw new Error('Invoice not found'); }
 
@@ -473,6 +475,44 @@ export const changeInvoiceStatus = asyncHandler(async (req, res) => {
             { invoiceId: invoice._id },
             { $set: { status: 'in_stock', invoiceId: null, warrantyExpiryDate: null } }
         );
+
+        // Restocking logic
+        if (restock) {
+            let warehouseId = null;
+            if (invoice.salesOrderIds && invoice.salesOrderIds.length > 0) {
+                const order = await SalesOrder.findById(invoice.salesOrderIds[0]);
+                if (order) {
+                    warehouseId = order.sourceWarehouseId;
+                }
+            }
+            if (!warehouseId) {
+                const defaultWarehouse = await Warehouse.findOne();
+                if (defaultWarehouse) {
+                    warehouseId = defaultWarehouse._id;
+                }
+            }
+
+            if (warehouseId) {
+                for (const item of invoice.items) {
+                    if (item.productId) {
+                        await increaseStock({
+                            productId: item.productId,
+                            warehouseId,
+                            quantity: item.quantity,
+                            costPerUnit: item.unitPrice,
+                            movementType: 'sale_return',
+                            sourceDocument: {
+                                type: invoice.salesOrderIds?.length > 0 ? 'sales_order' : 'manual',
+                                id: invoice.salesOrderIds?.length > 0 ? invoice.salesOrderIds[0] : invoice._id,
+                                number: invoice.invoiceNumber,
+                            },
+                            reason: `Restocked from cancelled invoice ${invoice.invoiceNumber}. Reason: ${reason || 'N/A'}`,
+                            userId: req.user._id,
+                        });
+                    }
+                }
+            }
+        }
     }
 
     await invoice.save();

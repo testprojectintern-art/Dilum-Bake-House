@@ -42,6 +42,7 @@ export default function ReturnDetailPage() {
     const [warehouseId, setWarehouseId] = useState('');
     const [isProcessOpen, setIsProcessOpen] = useState(false);
     const [processItems, setProcessItems] = useState([]);
+    const [autoRestock, setAutoRestock] = useState(true);
 
     const ret = data?.data;
     const warehouses = warehousesData?.data || [];
@@ -71,7 +72,7 @@ export default function ReturnDetailPage() {
     const handleReject = async () => { await actions.reject.mutateAsync({ id: ret._id, reason }); setActionDialog(null); setReason(''); };
     const handleReceive = async () => {
         if (!warehouseId) return;
-        await actions.receive.mutateAsync({ id: ret._id, data: { warehouseId } });
+        await actions.receive.mutateAsync({ id: ret._id, data: { warehouseId, autoRestock } });
         setIsReceiveOpen(false);
     };
     const handleProcess = async () => {
@@ -242,6 +243,10 @@ export default function ReturnDetailPage() {
                     <p className="text-sm text-gray-600">Where are the returned items being stored?</p>
                     <Select label="Warehouse" required options={warehouseOptions}
                         value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)} />
+                    <label className="flex items-center gap-2 text-sm select-none cursor-pointer text-gray-700 mt-4">
+                        <input type="checkbox" checked={autoRestock} onChange={(e) => setAutoRestock(e.target.checked)} className="rounded text-primary-600 focus:ring-primary-500" />
+                        Automatically add returned items to stock (skip inspection)
+                    </label>
                 </div>
                 <div className="flex justify-end gap-2 px-6 py-4 border-t bg-gray-50">
                     <Button variant="outline" onClick={() => setIsReceiveOpen(false)}>Cancel</Button>

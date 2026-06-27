@@ -19,6 +19,7 @@ export const getNetProfitAnalysis = asyncHandler(async (req, res) => {
 
     const matchStage = {
         deletedAt: null,
+        status: { $nin: ['draft', 'void', 'cancelled'] },
         invoiceDate: { $gte: start, $lte: end }
     };
 
