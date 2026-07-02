@@ -105,10 +105,11 @@ userSchema.methods.isLocked = function () {
 };
 
 // Exclude soft-deleted by default
-userSchema.pre(/^find/, function () {
+userSchema.pre(/^find/, function (next) {
     if (!this.getOptions || !this.getOptions().includeDeleted) {
         this.where({ deletedAt: null });
     }
+    if (typeof next === 'function') next();
 });
 
 const User = mongoose.model('User', userSchema);

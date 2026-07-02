@@ -39,7 +39,6 @@ const serialNumberSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-serialNumberSchema.index({ serialNumber: 1 });
 serialNumberSchema.index({ productId: 1, status: 1 });
 serialNumberSchema.index({ warehouseId: 1, status: 1 });
 

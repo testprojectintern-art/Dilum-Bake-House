@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff, Package, Sun, Moon } from 'lucide-react';
+import { Eye, EyeOff, Package, Sun, Moon, Watch, Clock, Sparkles } from 'lucide-react';
 
 import { authApi } from '../features/auth/authApi';
 import { loginSchema } from '../features/auth/authSchemas';
@@ -73,48 +73,128 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary-50 to-gray-100 dark:from-slate-950 dark:to-slate-900 flex items-center justify-center p-4 relative">
+        <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 font-sans">
             
-            {/* Theme Toggle Button */}
-            <button
-                type="button"
-                onClick={() => setIsDark(!isDark)}
-                className="absolute top-6 right-6 p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 shadow-sm transition-all duration-200"
-                title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-                {isDark ? <Sun size={18} className="text-amber-500" /> : <Moon size={18} className="text-indigo-600" />}
-            </button>
-            <div className="w-full max-w-md">
-                {/* Logo/Brand */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4">
-                        <Package className="w-8 h-8 text-white" />
+            {/* Left Side: Premium watch image cover panel (Visible only on md screens and up) */}
+            <div className="hidden lg:flex lg:w-7/12 xl:w-8/12 relative overflow-hidden bg-slate-900">
+                {/* Background Image */}
+                <div 
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10s] hover:scale-105"
+                    style={{ backgroundImage: 'url("/luxury_watch_login.png")' }}
+                />
+                
+                {/* Modern Dark Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-slate-900/70 to-transparent opacity-90" />
+                
+                {/* Content Overlay */}
+                <div className="relative z-10 flex flex-col justify-between w-full h-full p-12 text-white">
+                    {/* Top: Branding */}
+                    <div className="flex items-center space-x-3">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 backdrop-blur-md">
+                            <Watch className="w-6 h-6 text-amber-500" />
+                        </div>
+                        <div>
+                            <span className="text-xl font-bold tracking-wider bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 bg-clip-text text-transparent">
+                                HOORAWA
+                            </span>
+                            <span className="block text-[10px] tracking-widest text-slate-400 uppercase font-mono">
+                                POS & DISTRIBUTION
+                            </span>
+                        </div>
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900">Wholesale System</h1>
-                    <p className="text-sm text-gray-600 mt-1">Manufacturing & Distribution</p>
+
+                    {/* Middle: Floating Premium Feature Cards */}
+                    <div className="max-w-md space-y-6">
+                        <div className="space-y-2">
+                            <h2 className="text-4xl font-extrabold tracking-tight leading-tight">
+                                Precision in Time,<br />
+                                <span className="bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent">
+                                    Excellence in Business.
+                                </span>
+                            </h2>
+                            <p className="text-slate-300 text-sm leading-relaxed">
+                                Manage inventory, sales tracking, warehouse logistics, and employee attendance under a single unified dashboard built for luxury watch distribution.
+                            </p>
+                        </div>
+
+                        {/* Floating Stats Board */}
+                        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-lg space-y-4 shadow-2xl">
+                            <div className="flex items-center space-x-3 text-amber-400">
+                                <Sparkles size={16} />
+                                <span className="text-xs font-semibold uppercase tracking-wider">System Snapshot</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 text-left">
+                                <div>
+                                    <span className="block text-2xl font-bold text-white">46+</span>
+                                    <span className="text-[10px] text-slate-400 uppercase font-medium">Premium Brands & Models</span>
+                                </div>
+                                <div>
+                                    <span className="block text-2xl font-bold text-white">100%</span>
+                                    <span className="text-[10px] text-slate-400 uppercase font-medium">Real-time Stock Control</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bottom: Luxury Motto */}
+                    <div className="flex items-center space-x-2 text-xs text-slate-400 font-mono">
+                        <Clock size={14} className="text-amber-500" />
+                        <span>TIMEPIECE RETAIL & WHOLESALE ENTERPRISE</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Right Side: Professional Glassmorphic Login Form */}
+            <div className="w-full lg:w-5/12 xl:w-4/12 flex flex-col justify-between p-8 md:p-12 bg-white dark:bg-slate-950 relative shadow-2xl border-l border-slate-100 dark:border-slate-900">
+                
+                {/* Header Section */}
+                <div className="flex justify-between items-center">
+                    {/* Small brand shown on mobile */}
+                    <div className="flex lg:hidden items-center space-x-2">
+                        <Watch className="w-6 h-6 text-amber-500" />
+                        <span className="font-bold tracking-wider text-slate-900 dark:text-white">HOORAWA</span>
+                    </div>
+                    <div className="lg:block hidden" />
+
+                    {/* Theme Toggle Button */}
+                    <button
+                        type="button"
+                        onClick={() => setIsDark(!isDark)}
+                        className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all duration-200"
+                        title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    >
+                        {isDark ? <Sun size={18} className="text-amber-500" /> : <Moon size={18} className="text-indigo-600" />}
+                    </button>
                 </div>
 
-                <Card className="p-8">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-1">Sign in</h2>
-                    <p className="text-sm text-gray-500 mb-6">
-                        Enter your credentials to access your account
-                    </p>
+                {/* Form Main Container */}
+                <div className="my-auto max-w-sm w-full mx-auto space-y-8">
+                    <div className="space-y-2">
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                            Sign In
+                        </h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                            Enter your credentials to access the Hoorawa POS portal.
+                        </p>
+                    </div>
 
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <Input
-                            label="Email"
-                            type="email"
-                            placeholder="admin@example.com"
-                            required
-                            error={errors.email?.message}
-                            {...register('email')}
-                        />
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                        <div className="space-y-1">
+                            <Input
+                                label="Email Address"
+                                type="email"
+                                placeholder="admin@example.com"
+                                required
+                                error={errors.email?.message}
+                                {...register('email')}
+                            />
+                        </div>
 
-                        <div className="relative">
+                        <div className="space-y-1 relative">
                             <Input
                                 label="Password"
                                 type={showPassword ? 'text' : 'password'}
-                                placeholder="Enter your password"
+                                placeholder="••••••••"
                                 required
                                 error={errors.password?.message}
                                 {...register('password')}
@@ -122,7 +202,7 @@ export default function LoginPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
+                                className="absolute right-3.5 top-[38px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
@@ -133,19 +213,23 @@ export default function LoginPage() {
                             variant="primary"
                             fullWidth
                             loading={loginMutation.isPending}
+                            className="w-full py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-md shadow-amber-500/10 hover:shadow-lg hover:shadow-amber-500/20 active:scale-[0.98] transition-all duration-200"
                         >
-                            {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
+                            {loginMutation.isPending ? 'Authenticating...' : 'Secure Sign In'}
                         </Button>
                     </form>
 
-                    <p className="text-xs text-center text-gray-500 mt-6">
-                        Forgot your password? Contact your administrator.
-                    </p>
-                </Card>
+                    <div className="text-center">
+                        <a href="#" className="text-xs font-medium text-amber-600 dark:text-amber-500 hover:underline">
+                            Forgot your password? Contact system administrator.
+                        </a>
+                    </div>
+                </div>
 
-                <p className="text-center text-xs text-gray-500 mt-6">
-                    © 2026 Wholesale System. All rights reserved.
-                </p>
+                {/* Footer Section */}
+                <div className="text-center text-xs text-slate-400 dark:text-slate-500">
+                    <p>© 2026 Hoorawa Watch Shop. All rights reserved.</p>
+                </div>
             </div>
         </div>
     );

@@ -384,15 +384,15 @@ export default function Sidebar({ userRole, isOpen, onClose }) {
                                     {hasChildren ? (
                                         <button
                                             onClick={() => toggleExpand(item.id)}
-                                            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group relative ${isActive
-                                                    ? 'bg-gray-100 text-gray-900'
-                                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative hover:translate-x-1 ${isActive
+                                                    ? 'bg-slate-100 text-slate-900 dark:bg-slate-800/80 dark:text-amber-400 font-semibold'
+                                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/70'
                                                 }`}
                                         >
                                             {isActive && (
-                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-600 rounded-r-full" />
+                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-600 dark:bg-amber-500 rounded-r-full" />
                                             )}
-                                            <Icon size={18} className={`flex-shrink-0 ${isActive ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                                            <Icon size={18} className={`flex-shrink-0 ${isActive ? 'text-indigo-600 dark:text-amber-500' : 'text-gray-400 group-hover:text-gray-600 dark:text-slate-500 dark:group-hover:text-slate-350'}`} />
                                             <span className="truncate">{item.label}</span>
                                             <div className="ml-auto">
                                                 {isExpanded ? <ChevronDown size={14} className="text-gray-400" /> : <ChevronRight size={14} className="text-gray-400" />}
@@ -401,29 +401,29 @@ export default function Sidebar({ userRole, isOpen, onClose }) {
                                     ) : (
                                         <NavLink
                                             to={item.path}
-                                            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group relative ${location.pathname === item.path
-                                                    ? 'bg-gray-100 text-gray-900'
-                                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative hover:translate-x-1 ${location.pathname === item.path
+                                                    ? 'bg-slate-100 text-slate-900 dark:bg-slate-800/80 dark:text-amber-400 font-semibold'
+                                                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/70'
                                                 }`}
                                         >
                                             {location.pathname === item.path && (
-                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-600 rounded-r-full" />
+                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-600 dark:bg-amber-500 rounded-r-full" />
                                             )}
-                                            <Icon size={18} className={`flex-shrink-0 ${location.pathname === item.path ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                                            <Icon size={18} className={`flex-shrink-0 ${location.pathname === item.path ? 'text-indigo-600 dark:text-amber-500' : 'text-gray-400 group-hover:text-gray-600 dark:text-slate-500 dark:group-hover:text-slate-300'}`} />
                                             <span className="truncate">{item.label}</span>
                                         </NavLink>
                                     )}
 
                                     {hasChildren && isExpanded && (
-                                        <div className="ml-9 space-y-1 mt-1 border-l border-gray-100">
+                                        <div className="ml-9 space-y-1 mt-1 border-l border-gray-100 dark:border-slate-800">
                                             {item.children.map((child) => (
                                                 <NavLink
                                                     key={child.path}
                                                     to={child.path}
                                                     className={({ isActive }) =>
-                                                        `block px-4 py-2 text-sm font-medium rounded-lg transition-all ${isActive
-                                                            ? 'text-indigo-600'
-                                                            : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                                                        `block px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:translate-x-1 ${isActive
+                                                            ? 'text-indigo-600 dark:text-amber-400 dark:bg-slate-800/50 font-semibold'
+                                                            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/40'
                                                         }`
                                                     }
                                                 >

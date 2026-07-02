@@ -34,7 +34,8 @@ export const getStockItems = asyncHandler(async (req, res) => {
         .populate('warehouseId', 'name warehouseCode')
         .sort({ productName: 1 })
         .skip(skip)
-        .limit(Number(limit));
+        .limit(Number(limit))
+        .lean();
 
     // Filter low-stock in-memory (depends on product's reorderLevel)
     if (lowStock === 'true') {
@@ -62,7 +63,8 @@ export const getStockItems = asyncHandler(async (req, res) => {
  */
 export const getStockByProduct = asyncHandler(async (req, res) => {
     const items = await StockItem.find({ productId: req.params.productId })
-        .populate('warehouseId', 'name warehouseCode type');
+        .populate('warehouseId', 'name warehouseCode type')
+        .lean();
 
     const totalOnHand = items.reduce((s, i) => s + i.quantities.onHand, 0);
     const totalReserved = items.reduce((s, i) => s + i.quantities.reserved, 0);
@@ -116,7 +118,8 @@ export const getStockMovements = asyncHandler(async (req, res) => {
             .populate('performedBy', 'firstName lastName')
             .sort({ timestamp: -1 })
             .skip(skip)
-            .limit(Number(limit)),
+            .limit(Number(limit))
+            .lean(),
         StockMovement.countDocuments(filter),
     ]);
 
@@ -320,7 +323,8 @@ export const getReservations = asyncHandler(async (req, res) => {
         .populate('productId', 'name productCode')
         .populate('warehouseId', 'name warehouseCode')
         .populate('reservedBy', 'firstName lastName')
-        .sort({ reservedAt: -1 });
+        .sort({ reservedAt: -1 })
+        .lean();
 
     res.json({ success: true, count: reservations.length, data: reservations });
 });

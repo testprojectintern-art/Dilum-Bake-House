@@ -62,7 +62,7 @@ const grnSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ['draft', 'received', 'qc_pending', 'completed', 'rejected'],
+        enum: ['draft', 'received', 'qc_pending', 'completed', 'rejected', 'cancelled'],
         default: 'draft',
     },
 

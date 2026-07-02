@@ -128,7 +128,8 @@ export const getProducts = asyncHandler(async (req, res) => {
             .populate('brandId', 'name')
             .sort(sortObj)
             .skip(skip)
-            .limit(Number(limit)),
+            .limit(Number(limit))
+            .lean(),
         Product.countDocuments(filter),
     ]);
 
@@ -147,7 +148,8 @@ export const getProductById = asyncHandler(async (req, res) => {
         .populate('categoryId', 'name code')
         .populate('brandId', 'name')
         .populate('createdBy', 'firstName lastName')
-        .populate('updatedBy', 'firstName lastName');
+        .populate('updatedBy', 'firstName lastName')
+        .lean();
 
     if (!product) {
         res.status(404);

@@ -42,10 +42,11 @@ const brandSchema = new mongoose.Schema(
 
 brandSchema.index({ name: 'text' });
 
-brandSchema.pre(/^find/, function () {
-    if (!this.getOptions().includeDeleted) {
+brandSchema.pre(/^find/, function (next) {
+    if (!this.getOptions || !this.getOptions().includeDeleted) {
         this.where({ deletedAt: null });
     }
+    if (typeof next === 'function') next();
 });
 
 const Brand = mongoose.model('Brand', brandSchema);

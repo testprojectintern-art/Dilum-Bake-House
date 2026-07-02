@@ -226,10 +226,11 @@ productSchema.pre('save', async function () {
 });
 
 // Auto-filter soft-deleted
-productSchema.pre(/^find/, function () {
-    if (!this.getOptions().includeDeleted) {
+productSchema.pre(/^find/, function (next) {
+    if (!this.getOptions || !this.getOptions().includeDeleted) {
         this.where({ deletedAt: null });
     }
+    if (typeof next === 'function') next();
 });
 
 const Product = mongoose.model('Product', productSchema);

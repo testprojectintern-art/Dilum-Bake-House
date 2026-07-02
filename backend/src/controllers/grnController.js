@@ -232,7 +232,7 @@ export const cancelGrn = asyncHandler(async (req, res) => {
                     movementType: 'adjustment_out', // Or 'grn_cancellation'
                     batchNumber: grnItem.batchNumber || null,
                     sourceDocument: {
-                        type: 'grn_cancellation',
+                        type: 'grn',
                         id: grn._id,
                         number: grn.grnNumber,
                     },

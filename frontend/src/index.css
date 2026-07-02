@@ -332,3 +332,32 @@ html.dark .barcode-card-preview .barcode-text {
 html.dark .barcode-card-preview .barcode-subtext {
   color: #9ca3af !important; /* Always medium-light gray */
 }
+
+/* ==========================================================================
+   AMBIENT BACKGROUNDS & CARD STYLING
+   ========================================================================== */
+
+.glass-panel {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+html.dark .glass-panel {
+  background: #111827 !important;
+  border: 1px solid #1f2937 !important;
+}
+
+/* GPU-Accelerated Breathing Gradient Overlay */
+@keyframes pulse-gradient {
+  0%, 100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+
+.animate-pulse-gradient {
+  animation: pulse-gradient 20s ease-in-out infinite;
+  will-change: opacity;
+}

@@ -56,10 +56,11 @@ categorySchema.index({ name: 'text', code: 'text' });
 categorySchema.index({ parentCategory: 1, isActive: 1 });
 
 // Auto-filter soft-deleted
-categorySchema.pre(/^find/, function () {
-    if (!this.getOptions().includeDeleted) {
+categorySchema.pre(/^find/, function (next) {
+    if (!this.getOptions || !this.getOptions().includeDeleted) {
         this.where({ deletedAt: null });
     }
+    if (typeof next === 'function') next();
 });
 
 const Category = mongoose.model('Category', categorySchema);

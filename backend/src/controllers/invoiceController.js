@@ -372,7 +372,8 @@ export const getInvoices = asyncHandler(async (req, res) => {
         Invoice.find(filter)
             .populate('customerId', 'displayName customerCode')
             .populate('salesOrderIds', 'orderNumber')
-            .sort(sortObj).skip(skip).limit(Number(limit)),
+            .sort(sortObj).skip(skip).limit(Number(limit))
+            .lean(),
         Invoice.countDocuments(filter),
     ]);
 
@@ -393,7 +394,8 @@ export const getInvoiceById = asyncHandler(async (req, res) => {
         .populate('salesOrderIds', 'orderNumber orderDate')
         .populate('salesRepId', 'firstName lastName')
         .populate('createdBy', 'firstName lastName')
-        .populate('cancelledBy', 'firstName lastName');
+        .populate('cancelledBy', 'firstName lastName')
+        .lean();
     if (!invoice) { res.status(404); throw new Error('Invoice not found'); }
     res.json({ success: true, data: invoice });
 });
