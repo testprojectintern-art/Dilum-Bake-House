@@ -128,29 +128,29 @@ export default function DashboardPage() {
                         <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Dashboard Reports Filter</h2>
                         <p className="text-xs text-gray-400 mt-0.5">Filter all KPIs, charts, and shop sales by selecting a date range.</p>
                     </div>
-                    <div className="flex gap-3 w-full md:w-auto">
-                        <div className="flex-1 md:w-44 md:flex-none">
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">From Date</label>
+                    <div className="flex gap-2.5 w-full md:w-auto justify-start">
+                        <div className="w-[140px] sm:w-44 flex-shrink-0">
+                            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">From Date</label>
                             <div className="relative">
                                 <Input
                                     type="date"
                                     value={fromDate}
                                     onChange={(e) => setFromDate(e.target.value)}
-                                    className="pl-9 py-1 text-xs"
+                                    className="pl-2 sm:pl-9 py-1 text-xs"
                                 />
-                                <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block" />
                             </div>
                         </div>
-                        <div className="flex-1 md:w-44 md:flex-none">
-                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">To Date</label>
+                        <div className="w-[140px] sm:w-44 flex-shrink-0">
+                            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">To Date</label>
                             <div className="relative">
                                 <Input
                                     type="date"
                                     value={toDate}
                                     onChange={(e) => setToDate(e.target.value)}
-                                    className="pl-9 py-1 text-xs"
+                                    className="pl-2 sm:pl-9 py-1 text-xs"
                                 />
-                                <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block" />
                             </div>
                         </div>
                     </div>

@@ -1009,29 +1009,29 @@ export default function BakeryInvoicesPage() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                         </div>
                     </div>
-                    <div className="flex gap-3 w-full lg:w-auto">
-                        <div className="flex-1 lg:w-44 lg:flex-none">
+                    <div className="flex gap-2.5 w-full lg:w-auto justify-start">
+                        <div className="w-[140px] sm:w-44 flex-shrink-0">
                             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">From Date</label>
                             <div className="relative">
                                 <Input
                                     type="date"
                                     value={fromDate}
                                     onChange={(e) => setFromDate(e.target.value)}
-                                    className="pl-9 text-sm py-1.5"
+                                    className="pl-2 sm:pl-9 text-xs sm:text-sm py-1"
                                 />
-                                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block" />
                             </div>
                         </div>
-                        <div className="flex-1 lg:w-44 lg:flex-none">
+                        <div className="w-[140px] sm:w-44 flex-shrink-0">
                             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">To Date</label>
                             <div className="relative">
                                 <Input
                                     type="date"
                                     value={toDate}
                                     onChange={(e) => setToDate(e.target.value)}
-                                    className="pl-9 text-sm py-1.5"
+                                    className="pl-2 sm:pl-9 text-xs sm:text-sm py-1"
                                 />
-                                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block" />
                             </div>
                         </div>
                     </div>
