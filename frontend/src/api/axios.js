@@ -12,7 +12,7 @@ const getBaseURL = () => {
             return 'http://localhost:5005/api';
         }
     }
-    return 'https://hoorawa-pos-s6tr.onrender.com/api';
+    return 'https://dilum-bake-house.onrender.com/api';
 };
 
 const api = axios.create({
