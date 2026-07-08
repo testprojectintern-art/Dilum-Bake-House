@@ -75,12 +75,12 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 font-sans">
             
-            {/* Left Side: Premium watch image cover panel (Visible only on md screens and up) */}
+            {/* Left Side: Premium bakery cover panel (Visible only on md screens and up) */}
             <div className="hidden lg:flex lg:w-7/12 xl:w-8/12 relative overflow-hidden bg-slate-900">
                 {/* Background Image */}
                 <div 
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10s] hover:scale-105"
-                    style={{ backgroundImage: 'url("/luxury_watch_login.png")' }}
+                    style={{ backgroundImage: 'url("/bakery_login_bg.png")' }}
                 />
                 
                 {/* Modern Dark Gradient Overlay */}
@@ -90,15 +90,15 @@ export default function LoginPage() {
                 <div className="relative z-10 flex flex-col justify-between w-full h-full p-12 text-white">
                     {/* Top: Branding */}
                     <div className="flex items-center space-x-3">
-                        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 backdrop-blur-md">
-                            <Watch className="w-6 h-6 text-amber-500" />
+                        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 backdrop-blur-md">
+                            <Package className="w-6 h-6 text-indigo-500" />
                         </div>
                         <div>
-                            <span className="text-xl font-bold tracking-wider bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 bg-clip-text text-transparent">
-                                HOORAWA
+                            <span className="text-xl font-bold tracking-wider bg-gradient-to-r from-indigo-200 via-indigo-400 to-blue-500 bg-clip-text text-transparent">
+                                DILUM BAKE HOUSE
                             </span>
                             <span className="block text-[10px] tracking-widest text-slate-400 uppercase font-mono">
-                                POS & DISTRIBUTION
+                                BAKERY BILLING SYSTEM
                             </span>
                         </div>
                     </div>
@@ -107,30 +107,30 @@ export default function LoginPage() {
                     <div className="max-w-md space-y-6">
                         <div className="space-y-2">
                             <h2 className="text-4xl font-extrabold tracking-tight leading-tight">
-                                Precision in Time,<br />
-                                <span className="bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent">
-                                    Excellence in Business.
+                                Delight in every bite,<br />
+                                <span className="bg-gradient-to-r from-indigo-300 to-blue-500 bg-clip-text text-transparent">
+                                    Efficiency in Business.
                                 </span>
                             </h2>
                             <p className="text-slate-300 text-sm leading-relaxed">
-                                Manage inventory, sales tracking, warehouse logistics, and employee attendance under a single unified dashboard built for luxury watch distribution.
+                                Manage daily shop invoices, pricing structures, returns registry, and outstanding shop balances under a single unified dashboard.
                             </p>
                         </div>
 
                         {/* Floating Stats Board */}
                         <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-lg space-y-4 shadow-2xl">
-                            <div className="flex items-center space-x-3 text-amber-400">
+                            <div className="flex items-center space-x-3 text-indigo-400">
                                 <Sparkles size={16} />
                                 <span className="text-xs font-semibold uppercase tracking-wider">System Snapshot</span>
                             </div>
                             <div className="grid grid-cols-2 gap-4 text-left">
                                 <div>
-                                    <span className="block text-2xl font-bold text-white">46+</span>
-                                    <span className="text-[10px] text-slate-400 uppercase font-medium">Premium Brands & Models</span>
+                                    <span className="block text-2xl font-bold text-white">100%</span>
+                                    <span className="text-[10px] text-slate-400 uppercase font-medium">Daily Outstandings Rollover</span>
                                 </div>
                                 <div>
-                                    <span className="block text-2xl font-bold text-white">100%</span>
-                                    <span className="text-[10px] text-slate-400 uppercase font-medium">Real-time Stock Control</span>
+                                    <span className="block text-2xl font-bold text-white">Real-time</span>
+                                    <span className="text-[10px] text-slate-400 uppercase font-medium">Shop Suggest & Auto-Save</span>
                                 </div>
                             </div>
                         </div>
@@ -151,8 +151,8 @@ export default function LoginPage() {
                 <div className="flex justify-between items-center">
                     {/* Small brand shown on mobile */}
                     <div className="flex lg:hidden items-center space-x-2">
-                        <Watch className="w-6 h-6 text-amber-500" />
-                        <span className="font-bold tracking-wider text-slate-900 dark:text-white">HOORAWA</span>
+                        <Package className="w-6 h-6 text-indigo-600" />
+                        <span className="font-bold tracking-wider text-slate-900 dark:text-white">DILUM BAKE HOUSE</span>
                     </div>
                     <div className="lg:block hidden" />
 
@@ -174,7 +174,7 @@ export default function LoginPage() {
                             Sign In
                         </h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Enter your credentials to access the Hoorawa POS portal.
+                            Enter your credentials to access the Dilum Bake House portal.
                         </p>
                     </div>
 
@@ -220,7 +220,7 @@ export default function LoginPage() {
                     </form>
 
                     <div className="text-center">
-                        <a href="#" className="text-xs font-medium text-amber-600 dark:text-amber-500 hover:underline">
+                        <a href="#" className="text-xs font-medium text-indigo-600 dark:text-indigo-500 hover:underline">
                             Forgot your password? Contact system administrator.
                         </a>
                     </div>
@@ -228,7 +228,7 @@ export default function LoginPage() {
 
                 {/* Footer Section */}
                 <div className="text-center text-xs text-slate-400 dark:text-slate-500">
-                    <p>© 2026 Hoorawa Watch Shop. All rights reserved.</p>
+                    <p>© 2026 Dilum Bake House. All rights reserved.</p>
                 </div>
             </div>
         </div>

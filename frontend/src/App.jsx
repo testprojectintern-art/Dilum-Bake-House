@@ -106,6 +106,12 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
 import ReceiptPrintPage from './pages/ReceiptPrintPage';
 
+import BakeryProductsPage from './pages/BakeryProductsPage';
+import BakeryShopsPage from './pages/BakeryShopsPage';
+import BakeryStructuresPage from './pages/BakeryStructuresPage';
+import BakeryInvoicesPage from './pages/BakeryInvoicesPage';
+import BakeryInvoiceFormPage from './pages/BakeryInvoiceFormPage';
+
 function App() {
   return (
     <Routes>
@@ -237,6 +243,14 @@ function App() {
 
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin','manager']}><SettingsPage /></ProtectedRoute>} />
+
+        {/* Bakery Billing Module */}
+        <Route path="/bakery/products" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryProductsPage /></ProtectedRoute>} />
+        <Route path="/bakery/shops" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryShopsPage /></ProtectedRoute>} />
+        <Route path="/bakery/structures" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryStructuresPage /></ProtectedRoute>} />
+        <Route path="/bakery/invoices" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryInvoicesPage /></ProtectedRoute>} />
+        <Route path="/bakery/invoices/new" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryInvoiceFormPage /></ProtectedRoute>} />
+        <Route path="/bakery/invoices/:id/edit" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryInvoiceFormPage /></ProtectedRoute>} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

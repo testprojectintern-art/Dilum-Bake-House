@@ -44,6 +44,7 @@ import pettyCashRoutes from './routes/pettyCashRoutes.js';
 import reportsRoutes from './routes/reportsRoutes.js';
 import warrantyClaimRoutes from './routes/warrantyClaimRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
+import bakeryRoutes from './routes/bakeryRoutes.js';
 import { initSmsScheduler } from './utils/smsScheduler.js';
 
 import { seedDefaults } from './utils/seedDefaults.js';
@@ -125,6 +126,7 @@ app.use('/api/petty-cash', pettyCashRoutes);
 app.use('/api/warranty-claims', warrantyClaimRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/bakery', bakeryRoutes);
 
 
 // Health check endpoint

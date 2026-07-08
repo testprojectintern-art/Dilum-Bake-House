@@ -28,116 +28,16 @@ const menuItems = [
         allowedRoles: ALL_ROLES,
     },
     {
-        label: 'People',
-        id: 'people',
-        icon: UsersIcon,
-        allowedRoles: ADMIN_MANAGER_ACCOUNTANT_CASHIER,
-        children: [
-            { label: 'Customers', path: '/customers', allowedRoles: ADMIN_MANAGER_ACCOUNTANT_CASHIER },
-            { label: 'Bulk SMS Campaign', path: '/customers/bulk-sms', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Suppliers', path: '/suppliers', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Staff / Users', path: '/users', allowedRoles: ADMIN_MANAGER },
-            { label: 'Customer Groups', path: '/customer-groups', allowedRoles: ADMIN_MANAGER },
-        ],
-    },
-    {
-        label: 'Sales',
-        id: 'sales',
-        icon: ShoppingCart,
-        allowedRoles: ADMIN_MANAGER_ACCOUNTANT_CASHIER,
-        children: [
-            { label: 'POS Terminal', path: '/pos', allowedRoles: ADMIN_MANAGER_CASHIER },
-            { label: 'POS Registers', path: '/pos-sessions', allowedRoles: ADMIN_MANAGER_CASHIER },
-            { label: 'Sales Orders', path: '/sales-orders', allowedRoles: ADMIN_MANAGER_ACCOUNTANT_CASHIER },
-            { label: 'Wholesale Prices', path: '/wholesale-prices', allowedRoles: ADMIN_MANAGER },
-            { label: 'Invoices', path: '/invoices', allowedRoles: ADMIN_MANAGER_ACCOUNTANT_CASHIER },
-            { label: 'Payments Received', path: '/payments', allowedRoles: ADMIN_MANAGER_ACCOUNTANT_CASHIER },
-            { label: 'Installments', path: '/installments', allowedRoles: ADMIN_MANAGER_ACCOUNTANT_CASHIER },
-        ],
-    },
-    {
-        label: 'Inventory',
-        id: 'inventory',
-        icon: Package,
+        label: 'Bakery Billing',
+        id: 'bakery',
+        icon: FileText,
         allowedRoles: ALL_ROLES,
         children: [
-            { label: 'Products', path: '/products', allowedRoles: ADMIN_MANAGER },
-            { label: 'Barcode Generator', path: '/products/barcodes', allowedRoles: ADMIN_MANAGER },
-            { label: 'Categories', path: '/categories', allowedRoles: ADMIN_MANAGER },
-            { label: 'Brands', path: '/brands', allowedRoles: ADMIN_MANAGER },
-            { label: 'Stock Levels', path: '/stock', allowedRoles: ALL_ROLES },
-            { label: 'Warehouses', path: '/warehouses', allowedRoles: ADMIN_MANAGER },
-            { label: 'Stock Transfers', path: '/stock/transfer', allowedRoles: ADMIN_MANAGER },
-            { label: 'Stock Adjustment', path: '/stock/adjustment', allowedRoles: ADMIN_MANAGER },
-            { label: 'Damages Register', path: '/damages', allowedRoles: ADMIN_MANAGER_EMPLOYEE },
+            { label: 'Daily Invoices', path: '/bakery/invoices', allowedRoles: ALL_ROLES },
+            { label: 'Pricing Structures', path: '/bakery/structures', allowedRoles: ALL_ROLES },
+            { label: 'Product Registry', path: '/bakery/products', allowedRoles: ALL_ROLES },
+            { label: 'Shop Balances', path: '/bakery/shops', allowedRoles: ALL_ROLES },
         ],
-    },
-    {
-        label: 'Procurement',
-        id: 'procurement',
-        icon: ShoppingBag,
-        allowedRoles: ADMIN_MANAGER_ACCOUNTANT,
-        children: [
-            { label: 'Purchase Orders', path: '/purchase-orders', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Goods Received (GRN)', path: '/grns', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Supplier Returns', path: '/supplier-returns', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Purchase Bills', path: '/bills', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-        ],
-    },
-    {
-        label: 'Finance',
-        id: 'finance',
-        icon: Landmark,
-        allowedRoles: ADMIN_MANAGER_ACCOUNTANT,
-        children: [
-            { label: 'Bank Accounts', path: '/bank-accounts', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Expenses', path: '/expenses', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Petty Cash Ledger', path: '/finance/petty-cash', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Fund Transfers', path: '/fund-transfers', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Cheque Registry', path: '/cheques', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Credit Notes', path: '/credit-notes', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-        ],
-    },
-    {
-        label: 'Manufacturing',
-        id: 'production',
-        icon: Factory,
-        allowedRoles: ADMIN_MANAGER_EMPLOYEE,
-        children: [
-            { label: 'BOMs (Recipes)', path: '/boms', allowedRoles: ADMIN_MANAGER_EMPLOYEE },
-            { label: 'Production Orders', path: '/production-orders', allowedRoles: ADMIN_MANAGER_EMPLOYEE },
-        ],
-    },
-    {
-        label: 'HR & Payroll',
-        id: 'hr',
-        icon: Building2,
-        allowedRoles: ALL_ROLES,
-        children: [
-            { label: 'Employees', path: '/employees', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Salary Structures', path: '/salary-structures', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Attendance', path: '/attendance', allowedRoles: ALL_ROLES },
-            { label: 'Leave Requests', path: '/leaves', allowedRoles: ALL_ROLES },
-            { label: 'Payroll Management', path: '/payroll', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-        ],
-    },
-    {
-        label: 'Analytics',
-        id: 'analytics',
-        icon: BarChart3,
-        allowedRoles: ADMIN_MANAGER_ACCOUNTANT,
-        children: [
-            { label: 'Reports Dashboard', path: '/reports', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'Targets & Progress', path: '/targets-progress', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-            { label: 'AI Business Analyst', path: '/ai-predictions', allowedRoles: ADMIN_MANAGER_ACCOUNTANT },
-        ],
-    },
-    {
-        label: 'Settings',
-        id: 'settings',
-        icon: Settings,
-        path: '/settings',
-        allowedRoles: ADMIN_MANAGER,
     },
 ];
 
@@ -224,10 +124,9 @@ export default function Sidebar({ userRole, isOpen, onClose }) {
     }, []);
 
     const newActions = [
-        { label: 'New Invoice', path: '/invoices/new', icon: Receipt },
-        { label: 'New Sales Order', path: '/sales-orders/new', icon: ShoppingCart },
-        { label: 'New GRN', path: '/grns', icon: PackageCheck },
-        { label: 'New Customer', path: '/customers', icon: UsersIcon },
+        { label: 'New Daily Invoice', path: '/bakery/invoices/new', icon: Receipt },
+        { label: 'New Product', path: '/bakery/products', icon: Plus },
+        { label: 'New Pricing Structure', path: '/bakery/structures', icon: Workflow },
     ];
 
     return (
@@ -260,7 +159,7 @@ export default function Sidebar({ userRole, isOpen, onClose }) {
                                 <Package className="w-6 h-6 text-white" />
                             </div>
                             <div className="flex items-center gap-2">
-                                <h2 className="font-bold text-gray-900 text-xl tracking-tight">Hoorawa POS</h2>
+                                <h2 className="font-bold text-gray-900 text-xl tracking-tight">Dilum Bake House</h2>
                             </div>
                         </div>
                         <button
