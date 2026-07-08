@@ -123,33 +123,35 @@ export default function DashboardPage() {
 
             {/* Date Filters Card */}
             <Card className="p-4">
-                <div className="flex flex-col sm:flex-row gap-4 items-end">
+                <div className="flex flex-col md:flex-row gap-4 md:items-end">
                     <div className="flex-1 min-w-0">
                         <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Dashboard Reports Filter</h2>
                         <p className="text-xs text-gray-400 mt-0.5">Filter all KPIs, charts, and shop sales by selecting a date range.</p>
                     </div>
-                    <div className="w-full sm:w-48">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">From Date</label>
-                        <div className="relative">
-                            <Input
-                                type="date"
-                                value={fromDate}
-                                onChange={(e) => setFromDate(e.target.value)}
-                                className="pl-10 text-xs"
-                            />
-                            <Calendar size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <div className="flex gap-3 w-full md:w-auto">
+                        <div className="flex-1 md:w-44 md:flex-none">
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">From Date</label>
+                            <div className="relative">
+                                <Input
+                                    type="date"
+                                    value={fromDate}
+                                    onChange={(e) => setFromDate(e.target.value)}
+                                    className="pl-9 py-1 text-xs"
+                                />
+                                <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            </div>
                         </div>
-                    </div>
-                    <div className="w-full sm:w-48">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">To Date</label>
-                        <div className="relative">
-                            <Input
-                                type="date"
-                                value={toDate}
-                                onChange={(e) => setToDate(e.target.value)}
-                                className="pl-10 text-xs"
-                            />
-                            <Calendar size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        <div className="flex-1 md:w-44 md:flex-none">
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">To Date</label>
+                            <div className="relative">
+                                <Input
+                                    type="date"
+                                    value={toDate}
+                                    onChange={(e) => setToDate(e.target.value)}
+                                    className="pl-9 py-1 text-xs"
+                                />
+                                <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -46,6 +46,8 @@ export default function BakeryInvoicesPage() {
     const [whatsappInvoice, setWhatsappInvoice] = useState(null);
     const [isWhatsappOpen, setIsWhatsappOpen] = useState(false);
     const [customWhatsAppPhone, setCustomWhatsAppPhone] = useState('');
+    const [pdfFile, setPdfFile] = useState(null);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
     // Date range filters for backend
     const getStartOfDayISO = (dateStr) => {
@@ -404,7 +406,7 @@ export default function BakeryInvoicesPage() {
             margin: 6, // 6mm margins (spacious but keeps empty white space very low!)
             filename: `${invoice.invoiceNumber}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
+            html2canvas: { scale: 1.5, useCORS: true, logging: false },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
@@ -429,32 +431,56 @@ export default function BakeryInvoicesPage() {
         }
     };
 
-    const handleShareWhatsAppPdf = async (invoice) => {
-        const loadToastId = toast.loading("Generating invoice PDF file...");
-        try {
-            const pdfBlob = await generateInvoicePdfBlob(invoice);
-            toast.dismiss(loadToastId);
-            
-            const file = new File([pdfBlob], `Invoice-${invoice.invoiceNumber}.pdf`, { type: 'application/pdf' });
+    // Pre-generate PDF when invoice is selected for WhatsApp sharing to bypass iOS gesture restrictions
+    useEffect(() => {
+        if (!whatsappInvoice) {
+            setPdfFile(null);
+            return;
+        }
 
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: `Invoice #${invoice.invoiceNumber}`,
-                    text: `Dilum Bake House Invoice - ${invoice.shopName}`,
-                });
-                toast.success("Native share menu opened!");
-            } else {
-                toast.error("File sharing not supported on this device/browser. Downloading PDF file instead.");
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(pdfBlob);
-                link.download = `Invoice-${invoice.invoiceNumber}.pdf`;
-                link.click();
+        const preGeneratePdf = async () => {
+            setIsGeneratingPdf(true);
+            setPdfFile(null);
+            try {
+                const blob = await generateInvoicePdfBlob(whatsappInvoice);
+                const file = new File([blob], `Invoice-${whatsappInvoice.invoiceNumber}.pdf`, { type: 'application/pdf' });
+                setPdfFile(file);
+            } catch (err) {
+                console.error("Pre-generation of PDF failed", err);
+                toast.error("Failed to prepare PDF invoice file.");
+            } finally {
+                setIsGeneratingPdf(false);
             }
-        } catch (err) {
-            toast.dismiss(loadToastId);
-            toast.error("Failed to generate and share PDF.");
-            console.error(err);
+        };
+
+        preGeneratePdf();
+    }, [whatsappInvoice]);
+
+    const handleShareWhatsAppPdf = () => {
+        if (!pdfFile) {
+            toast.error("PDF is still preparing, please wait a moment.");
+            return;
+        }
+
+        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+            navigator.share({
+                files: [pdfFile],
+                title: `Invoice #${whatsappInvoice?.invoiceNumber}`,
+                text: `Dilum Bake House Invoice - ${whatsappInvoice?.shopName}`,
+            }).then(() => {
+                toast.success("Native share menu opened!");
+            }).catch(err => {
+                if (err.name !== 'AbortError') {
+                    toast.error("Sharing failed.");
+                    console.error(err);
+                }
+            });
+        } else {
+            toast.error("File sharing not supported on this device/browser. Downloading PDF file instead.");
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(pdfFile);
+            link.download = `Invoice-${whatsappInvoice?.invoiceNumber}.pdf`;
+            link.click();
         }
     };
 
@@ -970,7 +996,7 @@ export default function BakeryInvoicesPage() {
             </div>
 
             <Card className="p-6">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 items-end">
+                <div className="flex flex-col lg:flex-row gap-4 mb-6 lg:items-end">
                     <div className="relative flex-1">
                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Search Shop</label>
                         <div className="relative">
@@ -978,33 +1004,35 @@ export default function BakeryInvoicesPage() {
                                 placeholder="Search by shop name..."
                                 value={shopSearch}
                                 onChange={(e) => setShopSearch(e.target.value)}
-                                className="pl-10"
+                                className="pl-10 text-sm py-1.5"
                             />
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                         </div>
                     </div>
-                    <div className="w-full md:w-48">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">From Date</label>
-                        <div className="relative">
-                            <Input
-                                type="date"
-                                value={fromDate}
-                                onChange={(e) => setFromDate(e.target.value)}
-                                className="pl-10"
-                            />
-                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+                    <div className="flex gap-3 w-full lg:w-auto">
+                        <div className="flex-1 lg:w-44 lg:flex-none">
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">From Date</label>
+                            <div className="relative">
+                                <Input
+                                    type="date"
+                                    value={fromDate}
+                                    onChange={(e) => setFromDate(e.target.value)}
+                                    className="pl-9 text-sm py-1.5"
+                                />
+                                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            </div>
                         </div>
-                    </div>
-                    <div className="w-full md:w-48">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">To Date</label>
-                        <div className="relative">
-                            <Input
-                                type="date"
-                                value={toDate}
-                                onChange={(e) => setToDate(e.target.value)}
-                                className="pl-10"
-                            />
-                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+                        <div className="flex-1 lg:w-44 lg:flex-none">
+                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">To Date</label>
+                            <div className="relative">
+                                <Input
+                                    type="date"
+                                    value={toDate}
+                                    onChange={(e) => setToDate(e.target.value)}
+                                    className="pl-9 text-sm py-1.5"
+                                />
+                                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1103,13 +1131,23 @@ export default function BakeryInvoicesPage() {
                         </div>
                         <Button
                             onClick={() => {
-                                handleShareWhatsAppPdf(whatsappInvoice);
+                                handleShareWhatsAppPdf();
                                 setIsWhatsappOpen(false);
                             }}
-                            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2"
+                            disabled={isGeneratingPdf || !pdfFile}
+                            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            <Download size={14} />
-                            Generate & Share PDF File
+                            {isGeneratingPdf ? (
+                                <>
+                                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    Preparing PDF file...
+                                </>
+                            ) : (
+                                <>
+                                    <Download size={14} />
+                                    Generate & Share PDF File
+                                </>
+                            )}
                         </Button>
                     </div>
 
