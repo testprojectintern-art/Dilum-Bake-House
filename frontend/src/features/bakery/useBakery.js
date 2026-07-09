@@ -190,3 +190,75 @@ export const useBakeryDashboard = (filters = {}) => {
         queryFn: () => bakeryApi.getDashboard(filters),
     });
 };
+
+// Nuwara Eliya Delivery Consignments Hooks
+export const useNuwaraEliyaDeliveries = (params = {}) => {
+    return useQuery({
+        queryKey: ['nuwaraEliyaDeliveries', params],
+        queryFn: () => bakeryApi.getNuwaraEliyaDeliveries(params),
+        placeholderData: (prev) => prev,
+    });
+};
+
+export const useLatestNuwaraEliyaOutstanding = () => {
+    return useQuery({
+        queryKey: ['latestNuwaraEliyaOutstanding'],
+        queryFn: bakeryApi.getLatestNuwaraEliyaOutstanding,
+    });
+};
+
+export const useNuwaraEliyaDelivery = (id) => {
+    return useQuery({
+        queryKey: ['nuwaraEliyaDelivery', id],
+        queryFn: () => bakeryApi.getNuwaraEliyaDeliveryById(id),
+        enabled: !!id,
+    });
+};
+
+export const useCreateNuwaraEliyaDelivery = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: bakeryApi.createNuwaraEliyaDelivery,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['nuwaraEliyaDeliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['latestNuwaraEliyaOutstanding'] });
+            queryClient.invalidateQueries({ queryKey: ['bakeryProducts'] });
+            toast.success('Nuwara Eliya delivery record created');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to create record');
+        },
+    });
+};
+
+export const useUpdateNuwaraEliyaDelivery = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }) => bakeryApi.updateNuwaraEliyaDelivery(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['nuwaraEliyaDeliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['nuwaraEliyaDelivery'] });
+            queryClient.invalidateQueries({ queryKey: ['latestNuwaraEliyaOutstanding'] });
+            queryClient.invalidateQueries({ queryKey: ['bakeryProducts'] });
+            toast.success('Nuwara Eliya delivery record updated');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to update record');
+        },
+    });
+};
+
+export const useDeleteNuwaraEliyaDelivery = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: bakeryApi.deleteNuwaraEliyaDelivery,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['nuwaraEliyaDeliveries'] });
+            queryClient.invalidateQueries({ queryKey: ['latestNuwaraEliyaOutstanding'] });
+            toast.success('Nuwara Eliya delivery record deleted');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to delete record');
+        },
+    });
+};

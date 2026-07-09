@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
-import SalesOrder from '../../models/SalesOrder.js';
-import Invoice from '../../models/Invoice.js';
-import Payment from '../../models/Payment.js';
+import BakeryInvoice from '../../models/BakeryInvoice.js';
+import NuwaraEliyaDelivery from '../../models/NuwaraEliyaDelivery.js';
+import BakeryShop from '../../models/BakeryShop.js';
 
 /**
  * GET /api/reports/sales/summary?startDate=&endDate=
@@ -12,99 +12,74 @@ export const getSalesSummary = asyncHandler(async (req, res) => {
     const end = endDate ? new Date(endDate) : new Date();
     end.setHours(23, 59, 59, 999);
 
-    // All orders in period (excluding draft/cancelled)
-    const ordersAgg = await SalesOrder.aggregate([
-        {
-            $match: {
-                deletedAt: null,
-                orderDate: { $gte: start, $lte: end },
-                status: { $nin: ['draft', 'cancelled'] },
-            },
-        },
-        {
-            $group: {
-                _id: null,
-                totalOrders: { $sum: 1 },
-                totalValue: { $sum: '$grandTotal' },
-                avgOrderValue: { $avg: '$grandTotal' },
-            },
-        },
-    ]);
+    const invoices = await BakeryInvoice.find({ date: { $gte: start, $lte: end } });
+    const nuwaraDeliveries = await NuwaraEliyaDelivery.find({ date: { $gte: start, $lte: end } });
 
-    // Status breakdown
-    const statusBreakdown = await SalesOrder.aggregate([
-        {
-            $match: {
-                deletedAt: null,
-                orderDate: { $gte: start, $lte: end },
-            },
-        },
-        {
-            $group: {
-                _id: '$status',
-                count: { $sum: 1 },
-                value: { $sum: '$grandTotal' },
-            },
-        },
-    ]);
+    let rangeDeliveries = 0;
+    let rangeReturns = 0;
+    let rangeReceived = 0;
+    let rangeNetSales = 0;
+    let rangeOutstanding = 0;
+    let orderCount = invoices.length + nuwaraDeliveries.length;
 
-    // Invoice & payment info
-    const [invoicesAgg, paymentsAgg] = await Promise.all([
-        Invoice.aggregate([
-            { $match: { deletedAt: null, invoiceDate: { $gte: start, $lte: end } } },
-            {
-                $group: {
-                    _id: null,
-                    total: { $sum: '$grandTotal' },
-                    paid: { $sum: '$amountPaid' },
-                    balance: { $sum: '$balanceDue' },
-                    count: { $sum: 1 },
-                },
-            },
-        ]),
-        Payment.aggregate([
-            {
-                $match: {
-                    deletedAt: null,
-                    direction: 'received',
-                    paymentDate: { $gte: start, $lte: end },
-                },
-            },
-            {
-                $group: {
-                    _id: null,
-                    collected: { $sum: '$amount' },
-                    count: { $sum: 1 },
-                },
-            },
-        ]),
-    ]);
+    invoices.forEach(inv => {
+        rangeDeliveries += (inv.deliveredTotal || 0);
+        rangeReturns += (inv.returnsTotal || 0);
+        rangeReceived += (inv.amountReceived || 0);
+        rangeNetSales += ((inv.deliveredTotal || 0) - (inv.returnsTotal || 0));
+        rangeOutstanding += (inv.newBalance || 0);
+    });
 
-    const invoices = invoicesAgg[0] || { total: 0, paid: 0, balance: 0, count: 0 };
-    const payments = paymentsAgg[0] || { collected: 0, count: 0 };
+    let nuwaraDeliveriesCost = 0;
+    let nuwaraReturnsCost = 0;
+    let nuwaraReceivedAmt = 0;
+    let nuwaraSales = 0;
+    let nuwaraOutstanding = 0;
 
-    const collectionEfficiency = invoices.total > 0
-        ? +((payments.collected / invoices.total) * 100).toFixed(1)
+    nuwaraDeliveries.forEach(del => {
+        nuwaraDeliveriesCost += (del.loadCost || 0);
+        nuwaraReturnsCost += (del.returnsCost || 0);
+        nuwaraReceivedAmt += ((del.bankDeposits || 0) + (del.amountPaid || 0));
+        nuwaraSales += ((del.loadCost || 0) - (del.returnsCost || 0) - (del.onBoardStockCost || 0));
+        nuwaraOutstanding += (del.nextOutstanding || 0) + (del.shopsOutstanding || 0);
+    });
+
+    const totalSales = rangeNetSales + nuwaraSales;
+    const totalCollected = rangeReceived + nuwaraReceivedAmt;
+    const totalOutstanding = rangeOutstanding + nuwaraOutstanding;
+
+    const collectionEfficiency = totalSales > 0
+        ? +((totalCollected / totalSales) * 100).toFixed(1)
         : 0;
+
+    // Status breakdown (bakery vs nuwara eliya)
+    const statusBreakdown = [
+        { _id: 'Milk Bar & Hospital', count: invoices.length, value: rangeNetSales },
+        { _id: 'Nuwara Eliya Delivery', count: nuwaraDeliveries.length, value: nuwaraSales }
+    ];
 
     res.json({
         success: true,
         data: {
             period: { startDate: start, endDate: end },
-            orders: ordersAgg[0] || { totalOrders: 0, totalValue: 0, avgOrderValue: 0 },
+            orders: {
+                totalOrders: orderCount,
+                totalValue: totalSales,
+                avgOrderValue: orderCount > 0 ? +(totalSales / orderCount).toFixed(2) : 0
+            },
             statusBreakdown,
             invoices: {
-                ...invoices,
-                total: +invoices.total.toFixed(2),
-                paid: +invoices.paid.toFixed(2),
-                balance: +invoices.balance.toFixed(2),
+                total: +totalSales.toFixed(2),
+                paid: +totalCollected.toFixed(2),
+                balance: +totalOutstanding.toFixed(2),
+                count: orderCount
             },
             payments: {
-                collected: +payments.collected.toFixed(2),
-                count: payments.count,
+                collected: +totalCollected.toFixed(2),
+                count: orderCount
             },
-            collectionEfficiency,
-        },
+            collectionEfficiency
+        }
     });
 });
 
@@ -117,35 +92,84 @@ export const getSalesByProduct = asyncHandler(async (req, res) => {
     const end = endDate ? new Date(endDate) : new Date();
     end.setHours(23, 59, 59, 999);
 
-    const data = await SalesOrder.aggregate([
-        {
-            $match: {
-                deletedAt: null,
-                orderDate: { $gte: start, $lte: end },
-                status: { $nin: ['draft', 'cancelled'] },
-            },
-        },
-        { $unwind: '$items' },
-        {
-            $group: {
-                _id: '$items.productId',
-                productCode: { $first: '$items.productCode' },
-                productName: { $first: '$items.productName' },
-                quantitySold: { $sum: '$items.orderedQuantity' },
-                avgPrice: { $avg: '$items.unitPrice' },
-                grossRevenue: { $sum: { $multiply: ['$items.orderedQuantity', '$items.unitPrice'] } },
-                totalDiscount: { $sum: { $multiply: ['$items.orderedQuantity', '$items.unitPrice', { $divide: [{ $ifNull: ['$items.discountPercent', 0] }, 100] }] } },
-                orderCount: { $sum: 1 },
-            },
-        },
-        {
-            $addFields: {
-                netRevenue: { $subtract: ['$grossRevenue', '$totalDiscount'] },
-            },
-        },
-        { $sort: { netRevenue: -1 } },
-        { $limit: Number(limit) },
-    ]);
+    const invoices = await BakeryInvoice.find({ date: { $gte: start, $lte: end } });
+    const nuwaraDeliveries = await NuwaraEliyaDelivery.find({ date: { $gte: start, $lte: end } });
+
+    const productStats = {}; // productName -> { quantitySold, netRevenue, avgPrice, orderCount }
+
+    const getStats = (name) => {
+        if (!productStats[name]) {
+            productStats[name] = {
+                productName: name,
+                quantitySold: 0,
+                netRevenue: 0,
+                orderCount: 0,
+                priceSum: 0
+            };
+        }
+        return productStats[name];
+    };
+
+    // 1. Normal invoices
+    invoices.forEach(inv => {
+        inv.items.forEach(item => {
+            const stats = getStats(item.productName);
+            const sold = (item.morningQty || 0) + (item.afternoonQty || 0) - (item.returnQty || 0);
+            stats.quantitySold += sold;
+            stats.netRevenue += sold * (item.price || 0);
+            stats.priceSum += item.price || 0;
+            stats.orderCount += 1;
+        });
+    });
+
+    // 2. Nuwara Eliya deliveries
+    nuwaraDeliveries.forEach(del => {
+        const loadedMap = {};
+        del.loadedItems.forEach(item => {
+            loadedMap[item.productName] = { qty: item.qty || 0, price: item.price || 0 };
+        });
+
+        del.returnedItems.forEach(item => {
+            if (loadedMap[item.productName]) {
+                loadedMap[item.productName].qty -= (item.qty || 0);
+            } else {
+                loadedMap[item.productName] = { qty: -(item.qty || 0), price: item.price || 0 };
+            }
+        });
+
+        del.onBoardItems.forEach(item => {
+            if (loadedMap[item.productName]) {
+                loadedMap[item.productName].qty -= (item.qty || 0);
+            } else {
+                loadedMap[item.productName] = { qty: -(item.qty || 0), price: item.price || 0 };
+            }
+        });
+
+        Object.entries(loadedMap).forEach(([name, data]) => {
+            const stats = getStats(name);
+            stats.quantitySold += data.qty;
+            stats.netRevenue += data.qty * data.price;
+            stats.priceSum += data.price;
+            stats.orderCount += 1;
+        });
+    });
+
+    const data = Object.values(productStats).map(stats => {
+        const avgPrice = stats.orderCount > 0 ? (stats.priceSum / stats.orderCount) : 0;
+        return {
+            productId: stats.productName, // use name as ID for bakery
+            productCode: 'BAKERY',
+            productName: stats.productName,
+            quantitySold: stats.quantitySold,
+            avgPrice: parseFloat(avgPrice.toFixed(2)),
+            grossRevenue: parseFloat(stats.netRevenue.toFixed(2)),
+            totalDiscount: 0,
+            netRevenue: parseFloat(stats.netRevenue.toFixed(2)),
+            orderCount: stats.orderCount
+        };
+    })
+    .sort((a, b) => b.netRevenue - a.netRevenue)
+    .slice(0, Number(limit));
 
     res.json({ success: true, data });
 });
@@ -159,60 +183,58 @@ export const getSalesByCustomer = asyncHandler(async (req, res) => {
     const end = endDate ? new Date(endDate) : new Date();
     end.setHours(23, 59, 59, 999);
 
-    const data = await SalesOrder.aggregate([
-        {
-            $match: {
-                deletedAt: null,
-                orderDate: { $gte: start, $lte: end },
-                status: { $nin: ['draft', 'cancelled'] },
-            },
-        },
-        {
-            $group: {
-                _id: '$customerId',
-                customerCode: { $first: '$customerSnapshot.code' },
-                customerName: { $first: '$customerSnapshot.name' },
-                orderCount: { $sum: 1 },
-                totalOrdered: { $sum: '$grandTotal' },
-                avgOrderValue: { $avg: '$grandTotal' },
-            },
-        },
-        { $sort: { totalOrdered: -1 } },
-        { $limit: Number(limit) },
-    ]);
+    const invoices = await BakeryInvoice.find({ date: { $gte: start, $lte: end } });
+    const nuwaraDeliveries = await NuwaraEliyaDelivery.find({ date: { $gte: start, $lte: end } });
 
-    // Get payment info for these customers
-    const customerIds = data.map((c) => c._id);
-    const paymentsPerCustomer = await Invoice.aggregate([
-        {
-            $match: {
-                deletedAt: null,
-                customerId: { $in: customerIds },
-                invoiceDate: { $gte: start, $lte: end },
-            },
-        },
-        {
-            $group: {
-                _id: '$customerId',
-                invoiced: { $sum: '$grandTotal' },
-                paid: { $sum: '$amountPaid' },
-                outstanding: { $sum: '$balanceDue' },
-            },
-        },
-    ]);
-    const paymentMap = new Map(paymentsPerCustomer.map((p) => [p._id.toString(), p]));
+    const shopStats = {}; // shopName -> { orderCount, totalOrdered, paid, outstanding }
 
-    const enriched = data.map((d) => {
-        const pay = paymentMap.get(d._id.toString()) || { invoiced: 0, paid: 0, outstanding: 0 };
-        return {
-            ...d,
-            totalOrdered: +d.totalOrdered.toFixed(2),
-            avgOrderValue: +d.avgOrderValue.toFixed(2),
-            invoiced: +pay.invoiced.toFixed(2),
-            paid: +pay.paid.toFixed(2),
-            outstanding: +pay.outstanding.toFixed(2),
-        };
+    const getShop = (name) => {
+        if (!shopStats[name]) {
+            shopStats[name] = {
+                customerName: name,
+                orderCount: 0,
+                totalOrdered: 0,
+                paid: 0,
+                outstanding: 0
+            };
+        }
+        return shopStats[name];
+    };
+
+    invoices.forEach(inv => {
+        const shop = getShop(inv.shopName);
+        shop.orderCount += 1;
+        shop.totalOrdered += (inv.deliveredTotal || 0) - (inv.returnsTotal || 0);
+        shop.paid += (inv.amountReceived || 0);
+        shop.outstanding += (inv.newBalance || 0);
     });
+
+    nuwaraDeliveries.forEach(del => {
+        const name = `Nuwara Eliya (${del.structureName || 'Route'})`;
+        const shop = getShop(name);
+        const netSales = (del.loadCost || 0) - (del.returnsCost || 0) - (del.onBoardStockCost || 0);
+        shop.orderCount += 1;
+        shop.totalOrdered += netSales;
+        shop.paid += (del.bankDeposits || 0) + (del.amountPaid || 0);
+        shop.outstanding += (del.nextOutstanding || 0) + (del.shopsOutstanding || 0);
+    });
+
+    const enriched = Object.values(shopStats).map(shop => {
+        const avgOrderValue = shop.orderCount > 0 ? (shop.totalOrdered / shop.orderCount) : 0;
+        return {
+            _id: shop.customerName,
+            customerCode: 'SHOP',
+            customerName: shop.customerName,
+            orderCount: shop.orderCount,
+            totalOrdered: parseFloat(shop.totalOrdered.toFixed(2)),
+            avgOrderValue: parseFloat(avgOrderValue.toFixed(2)),
+            invoiced: parseFloat(shop.totalOrdered.toFixed(2)),
+            paid: parseFloat(shop.paid.toFixed(2)),
+            outstanding: parseFloat(shop.outstanding.toFixed(2))
+        };
+    })
+    .sort((a, b) => b.totalOrdered - a.totalOrdered)
+    .slice(0, Number(limit));
 
     res.json({ success: true, data: enriched });
 });
@@ -226,49 +248,46 @@ export const getSalesTrend = asyncHandler(async (req, res) => {
     const end = endDate ? new Date(endDate) : new Date();
     end.setHours(23, 59, 59, 999);
 
-    let groupExpr;
-    if (groupBy === 'month') {
-        groupExpr = { year: { $year: '$orderDate' }, month: { $month: '$orderDate' } };
-    } else if (groupBy === 'week') {
-        groupExpr = { year: { $year: '$orderDate' }, week: { $week: '$orderDate' } };
-    } else {
-        groupExpr = {
-            year: { $year: '$orderDate' },
-            month: { $month: '$orderDate' },
-            day: { $dayOfMonth: '$orderDate' },
-        };
-    }
+    const invoices = await BakeryInvoice.find({ date: { $gte: start, $lte: end } });
+    const nuwaraDeliveries = await NuwaraEliyaDelivery.find({ date: { $gte: start, $lte: end } });
 
-    const data = await SalesOrder.aggregate([
-        {
-            $match: {
-                deletedAt: null,
-                orderDate: { $gte: start, $lte: end },
-                status: { $nin: ['draft', 'cancelled'] },
-            },
-        },
-        {
-            $group: {
-                _id: groupExpr,
-                count: { $sum: 1 },
-                total: { $sum: '$grandTotal' },
-            },
-        },
-        { $sort: { '_id.year': 1, '_id.month': 1, '_id.week': 1, '_id.day': 1 } },
-    ]);
+    const trends = {};
 
-    // Format labels
-    const result = data.map((d) => {
-        let label;
+    const getTrendKey = (date) => {
+        const d = new Date(date);
+        const y = d.getFullYear();
         if (groupBy === 'month') {
-            label = `${d._id.year}-${String(d._id.month).padStart(2, '0')}`;
+            return `${y}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         } else if (groupBy === 'week') {
-            label = `${d._id.year}-W${d._id.week}`;
+            const firstDayOfYear = new Date(y, 0, 1);
+            const pastDaysOfYear = (d - firstDayOfYear) / 86400000;
+            const week = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+            return `${y}-W${week}`;
         } else {
-            label = `${d._id.year}-${String(d._id.month).padStart(2, '0')}-${String(d._id.day).padStart(2, '0')}`;
+            return `${y}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         }
-        return { label, count: d.count, total: +d.total.toFixed(2) };
+    };
+
+    const addTrend = (date, value) => {
+        const key = getTrendKey(date);
+        if (!trends[key]) {
+            trends[key] = { label: key, count: 0, total: 0 };
+        }
+        trends[key].count += 1;
+        trends[key].total += value;
+    };
+
+    invoices.forEach(inv => {
+        const val = (inv.deliveredTotal || 0) - (inv.returnsTotal || 0);
+        addTrend(inv.date, val);
     });
+
+    nuwaraDeliveries.forEach(del => {
+        const val = (del.loadCost || 0) - (del.returnsCost || 0) - (del.onBoardStockCost || 0);
+        addTrend(del.date, val);
+    });
+
+    const result = Object.values(trends).sort((a, b) => a.label.localeCompare(b.label));
 
     res.json({ success: true, data: result });
 });

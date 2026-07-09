@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-    Plus, Trash2, Save, X, Loader2, ArrowLeft, Search, RefreshCw, AlertTriangle
+    Plus, Trash2, Save, X, Loader2, ArrowLeft, Search, RefreshCw, AlertTriangle,
+    Download, MessageSquare, CheckCircle, Printer
 } from 'lucide-react';
+import html2pdf from 'html2pdf.js';
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -48,8 +50,25 @@ export default function BakeryInvoiceFormPage() {
     const [shopSuggestions, setShopSuggestions] = useState([]);
     const [showShopSuggestions, setShowShopSuggestions] = useState(false);
     const [activeRowSuggestIndex, setActiveRowSuggestIndex] = useState(null);
+    const [selectedShopContacts, setSelectedShopContacts] = useState([]);
+
+    // Global product search bar
+    const [productSearch, setProductSearch] = useState('');
+    const [showProductSearch, setShowProductSearch] = useState(false);
+    const productSearchRef = useRef(null);
 
     const shopSuggestRef = useRef(null);
+
+    // Click-outside handler for global product search
+    useEffect(() => {
+        const handler = (e) => {
+            if (productSearchRef.current && !productSearchRef.current.contains(e.target)) {
+                setShowProductSearch(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
 
     // Set today's date on create
     useEffect(() => {
@@ -89,6 +108,28 @@ export default function BakeryInvoiceFormPage() {
             setSpecialNote(inv.specialNote || '');
         }
     }, [isEdit, invoiceRes]);
+
+    // Load shop contacts when shopName changes or is loaded (for existing shops)
+    useEffect(() => {
+        const fetchShopContacts = async () => {
+            if (!shopName.trim()) {
+                setSelectedShopContacts([]);
+                return;
+            }
+            try {
+                const res = await bakeryApi.suggestShops(shopName);
+                const exactMatch = res?.data?.find(s => s.name.toLowerCase() === shopName.trim().toLowerCase());
+                if (exactMatch) {
+                    setSelectedShopContacts(exactMatch.contacts || []);
+                } else {
+                    setSelectedShopContacts([]);
+                }
+            } catch (err) {
+                console.error('Error fetching shop contacts', err);
+            }
+        };
+        fetchShopContacts();
+    }, [shopName]);
 
     // Handle Shop input and fetch suggestions
     const handleShopNameChange = async (val) => {
@@ -169,6 +210,26 @@ export default function BakeryInvoiceFormPage() {
         setItems(prev => [...prev, { productName: '', price: 0, morningQty: 0, afternoonQty: 0, returnQty: 0 }]);
     };
 
+    // Quick-add product from global search bar
+    const handleQuickAddProduct = (product) => {
+        const alreadyIdx = items.findIndex(it => it.productName.toLowerCase() === product.name.toLowerCase());
+        if (alreadyIdx !== -1) {
+            // Already exists — just highlight the row (scroll into view)
+            const rows = document.querySelectorAll('tbody tr');
+            if (rows[alreadyIdx]) rows[alreadyIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            setItems(prev => [...prev, {
+                productName: product.name,
+                price: product.price || 0,
+                morningQty: 0,
+                afternoonQty: 0,
+                returnQty: 0
+            }]);
+        }
+        setProductSearch('');
+        setShowProductSearch(false);
+    };
+
     const handleRemoveItemRow = (idx) => {
         setItems(prev => prev.filter((_, i) => i !== idx));
     };
@@ -207,6 +268,98 @@ export default function BakeryInvoiceFormPage() {
     const grandTotal = oldBalance + deliveredTotal - returnsTotal;
     const newBalance = grandTotal - amountReceived;
 
+    // After-save state
+    const [savedInvoice, setSavedInvoice] = useState(null);
+    const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+    const generateSavedInvoicePdf = async (invoice) => {
+        const element = document.createElement('div');
+        element.id = 'pdf-tmp';
+        element.style.cssText = 'padding:10px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.4;width:198mm;background-color:#ffffff;color:#1e293b;box-sizing:border-box;';
+
+        const morningItems = invoice.items.filter(i => i.morningQty > 0);
+        const afternoonItems = invoice.items.filter(i => i.afternoonQty > 0);
+        const returnItems = invoice.items.filter(i => i.returnQty > 0);
+        let morningTotal = 0, afternoonTotal = 0, returnsTotal = 0;
+        invoice.items.forEach(i => {
+            morningTotal += (i.morningQty || 0) * (i.price || 0);
+            afternoonTotal += (i.afternoonQty || 0) * (i.price || 0);
+            returnsTotal += (i.returnQty || 0) * (i.price || 0);
+        });
+
+        const tRow = (label, qty, price) => `<tr><td style="font-weight:600;padding:7px 10px;border-bottom:1px solid #f1f5f9;">${label}</td><td style="text-align:right;padding:7px 10px;border-bottom:1px solid #f1f5f9;">${qty}</td><td style="text-align:right;padding:7px 10px;border-bottom:1px solid #f1f5f9;">${price.toFixed(2)}</td><td style="text-align:right;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-weight:700;color:#1e3a8a;">${(qty * price).toFixed(2)}</td></tr>`;
+        const thead = `<thead><tr><th style="text-align:left;background:#f1f5f9;padding:7px 10px;font-size:11px;text-transform:uppercase;border-bottom:2px solid #cbd5e1;">Product</th><th style="text-align:right;background:#f1f5f9;padding:7px 10px;font-size:11px;text-transform:uppercase;border-bottom:2px solid #cbd5e1;">Qty</th><th style="text-align:right;background:#f1f5f9;padding:7px 10px;font-size:11px;text-transform:uppercase;border-bottom:2px solid #cbd5e1;">Price</th><th style="text-align:right;background:#f1f5f9;padding:7px 10px;font-size:11px;text-transform:uppercase;border-bottom:2px solid #cbd5e1;">Total LKR</th></tr></thead>`;
+        const section = (title, color, items, getQty) => items.length === 0 ? '' : `<div style="font-size:12px;font-weight:900;text-transform:uppercase;color:${color};border-bottom:2px solid ${color};padding-bottom:4px;margin:20px 0 8px 0;">${title}</div><table style="width:100%;border-collapse:collapse;">${thead}<tbody>${items.map(i => tRow(i.productName, getQty(i), i.price)).join('')}</tbody></table>`;
+
+        element.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1e3a8a;padding-bottom:12px;margin-bottom:18px;">
+            <div><h1 style="font-size:24px;font-weight:900;color:#1e3a8a;margin:0 0 4px 0;">DILUM BAKE HOUSE</h1><p style="font-size:10px;color:#64748b;margin:0 0 2px 0;">39/A, Muruthalawa road, Dehideniya, Peradeniya</p><p style="font-size:10px;color:#64748b;margin:0;">Tel: 0762125472 / 0774334046</p></div>
+            <div style="text-align:right;"><h2 style="font-size:22px;font-weight:900;color:#1e3a8a;margin:0 0 6px 0;">INVOICE</h2><div style="font-size:11px;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px;min-width:200px;display:inline-block;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#64748b;">Invoice No:</span><span style="font-weight:700;color:#1e3a8a;">${invoice.invoiceNumber}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#64748b;">Date:</span><span style="font-weight:700;">${new Date(invoice.date).toLocaleDateString()}</span></div><div style="display:flex;justify-content:space-between;"><span style="color:#64748b;">Status:</span><span style="font-weight:700;color:${invoice.newBalance <= 0 ? '#16a34a' : '#dc2626'}">${invoice.newBalance <= 0 ? 'Paid' : 'Unpaid'}</span></div></div></div>
+          </div>
+          <div style="margin-bottom:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;"><h3 style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;margin:0 0 5px 0;">Billed To</h3><div style="font-size:14px;font-weight:800;color:#1e293b;text-transform:uppercase;">${invoice.shopName}</div>${invoice.shopPhone ? `<div style="font-size:11px;color:#475569;margin-top:3px;">Phone: <strong>${invoice.shopPhone}</strong></div>` : ''}</div>
+          ${section('Morning Deliveries', '#1e3a8a', morningItems, i => i.morningQty)}
+          ${section('Afternoon Deliveries', '#1e3a8a', afternoonItems, i => i.afternoonQty)}
+          ${section('Returns Received', '#b91c1c', returnItems, i => i.returnQty)}
+          <div style="display:flex;gap:20px;justify-content:flex-end;margin-top:22px;">
+            <div style="width:300px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;font-size:13px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:5px;color:#475569;"><span>Morning:</span><span style="font-weight:600;">${morningTotal.toFixed(2)} LKR</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:5px;color:#475569;"><span>Afternoon:</span><span style="font-weight:600;">${afternoonTotal.toFixed(2)} LKR</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-weight:800;background:#eff6ff;border-radius:5px;padding:5px 9px;color:#1e3a8a;"><span>Today Total (Delivered):</span><span>${(morningTotal+afternoonTotal).toFixed(2)} LKR</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:5px;color:#475569;"><span>Less Returns:</span><span style="font-weight:600;color:#dc2626;">-${returnsTotal.toFixed(2)} LKR</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:7px;color:#475569;border-bottom:1px dashed #cbd5e1;padding-bottom:5px;"><span>Old Outstanding:</span><span style="font-weight:600;">${(invoice.oldBalance||0).toFixed(2)} LKR</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-weight:800;font-size:14px;"><span>Grand Total:</span><span style="color:#1e3a8a;">${(invoice.grandTotal||0).toFixed(2)} LKR</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-weight:800;font-size:14px;border-bottom:1px dashed #cbd5e1;padding-bottom:5px;"><span>Amount Paid Today:</span><span style="color:#16a34a;">-${(invoice.amountReceived||0).toFixed(2)} LKR</span></div>
+              <div style="display:flex;justify-content:space-between;font-weight:950;font-size:15px;"><span>Net Outstanding:</span><span style="color:#dc2626;">${(invoice.newBalance||0).toFixed(2)} LKR</span></div>
+            </div>
+          </div>
+          <div style="text-align:center;font-size:9px;margin-top:36px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px;font-style:italic;">Delight in every bite! Thank you for your continued partnership with Dilum Bake House.</div>
+        `;
+        document.body.appendChild(element);
+        const opts = { margin:6, filename:`${invoice.invoiceNumber}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:1.5,useCORS:true,logging:false}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} };
+        try {
+            const blob = await html2pdf().from(element).set(opts).output('blob');
+            document.body.removeChild(element);
+            return blob;
+        } catch(e) { document.body.removeChild(element); throw e; }
+    };
+
+    const handleDownloadSavedPdf = async () => {
+        if (!savedInvoice) return;
+        setIsDownloadingPdf(true);
+        try {
+            const blob = await generateSavedInvoicePdf(savedInvoice);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `${savedInvoice.invoiceNumber}.pdf`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast.success('PDF downloaded!');
+        } catch(e) { toast.error('PDF generation failed.'); }
+        finally { setIsDownloadingPdf(false); }
+    };
+
+    const handleShareSaved = async () => {
+        if (!savedInvoice) return;
+        setIsDownloadingPdf(true);
+        try {
+            const blob = await generateSavedInvoicePdf(savedInvoice);
+            const file = new File([blob], `${savedInvoice.invoiceNumber}.pdf`, { type: 'application/pdf' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: `Invoice #${savedInvoice.invoiceNumber}`, text: `Dilum Bake House - ${savedInvoice.shopName}` });
+            } else {
+                // Fallback: download
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `${savedInvoice.invoiceNumber}.pdf`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                toast('Sharing not supported — PDF downloaded instead.');
+            }
+        } catch(e) { if (e.name !== 'AbortError') toast.error('Share failed.'); }
+        finally { setIsDownloadingPdf(false); }
+    };
+
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
@@ -238,13 +391,15 @@ export default function BakeryInvoiceFormPage() {
         if (isEdit) {
             updateInvoice.mutate(
                 { id, data },
-                {
-                    onSuccess: () => navigate('/bakery/invoices')
-                }
+                { onSuccess: () => navigate('/bakery/invoices') }
             );
         } else {
             createInvoice.mutate(data, {
-                onSuccess: () => navigate('/bakery/invoices')
+                onSuccess: (res) => {
+                    const inv = res?.data || res;
+                    toast.success(`Invoice ${inv?.invoiceNumber || ''} created successfully!`);
+                    navigate('/bakery/invoices');
+                }
             });
         }
     };
@@ -264,6 +419,14 @@ export default function BakeryInvoiceFormPage() {
             </div>
         );
     }
+
+    const filteredItems = items
+        .map((item, originalIndex) => ({ ...item, originalIndex }))
+        .filter(item => {
+            if (!productSearch.trim()) return true;
+            if (!item.productName) return true;
+            return item.productName.toLowerCase().includes(productSearch.toLowerCase());
+        });
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto pb-12">
@@ -322,12 +485,53 @@ export default function BakeryInvoiceFormPage() {
                                 )}
                             </div>
 
-                            <Input
-                                label="Phone Number(s)"
-                                placeholder="e.g. 0762125472, 0774334046 (separate with commas)"
-                                value={shopPhone}
-                                onChange={(e) => setShopPhone(e.target.value)}
-                            />
+                            <div className="sm:col-span-2 animate-in fade-in duration-150">
+                                <Input
+                                    label="Phone Number(s) for Invoice"
+                                    placeholder="e.g. 0762125472, 0774334046 (separate with commas)"
+                                    value={shopPhone}
+                                    onChange={(e) => setShopPhone(e.target.value)}
+                                />
+                                {selectedShopContacts.length > 0 && (
+                                    <div className="mt-2.5">
+                                        <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Shop Contacts (Click to add to phone)</span>
+                                        <div className="flex flex-wrap gap-2">
+                                            {selectedShopContacts.map((c, i) => {
+                                                const isAlreadyAdded = shopPhone.includes(c.phone);
+                                                return (
+                                                    <button
+                                                        key={i}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (isAlreadyAdded) {
+                                                                // Remove number
+                                                                const parts = shopPhone.split(',').map(p => p.trim()).filter(p => p !== c.phone);
+                                                                setShopPhone(parts.join(', '));
+                                                            } else {
+                                                                // Add number
+                                                                const parts = shopPhone ? shopPhone.split(',').map(p => p.trim()) : [];
+                                                                parts.push(c.phone);
+                                                                setShopPhone(parts.join(', '));
+                                                            }
+                                                        }}
+                                                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition duration-150 ${
+                                                            isAlreadyAdded 
+                                                                ? 'bg-indigo-50 text-indigo-755 border-indigo-300 shadow-sm' 
+                                                                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        <span className="font-bold uppercase text-[9px] px-1 py-0.5 rounded bg-gray-100 text-gray-655">
+                                                            {c.role}
+                                                        </span>
+                                                        <span>{c.phone}</span>
+                                                        {c.name && <span className="text-gray-400 font-normal">({c.name})</span>}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
                             <Input
                                 label="Invoice Date"
@@ -375,7 +579,7 @@ export default function BakeryInvoiceFormPage() {
                                         step="0.01"
                                         value={oldBalance === 0 ? '' : oldBalance}
                                         onChange={(e) => setOldBalance(Number(e.target.value) || 0)}
-                                        className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg pl-8 pr-3 py-1.5 text-sm font-bold text-gray-700 focus:outline-none"
+                                        className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg pl-12 pr-3 py-1.5 text-sm font-bold text-gray-700 focus:outline-none"
                                         placeholder="0.00"
                                     />
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">LKR</span>
@@ -396,7 +600,7 @@ export default function BakeryInvoiceFormPage() {
                                         min="0"
                                         value={amountReceived === 0 ? '' : amountReceived}
                                         onChange={(e) => setAmountReceived(Number(e.target.value) || 0)}
-                                        className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg pl-8 pr-3 py-1.5 text-sm font-bold text-green-600 focus:outline-none"
+                                        className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg pl-12 pr-3 py-1.5 text-sm font-bold text-green-600 focus:outline-none"
                                         placeholder="0.00"
                                     />
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">LKR</span>
@@ -429,56 +633,89 @@ export default function BakeryInvoiceFormPage() {
                         </Button>
                     </div>
 
+                    {/* Filter Product List Bar */}
+                    <div className="relative mb-4">
+                        <div className="relative flex items-center">
+                            <Search className="absolute left-3.5 text-indigo-400 w-4 h-4 pointer-events-none z-10" />
+                            <input
+                                type="text"
+                                placeholder="Filter products in this bill (type product name)..."
+                                value={productSearch}
+                                onChange={(e) => setProductSearch(e.target.value)}
+                                className="w-full bg-indigo-50/40 border border-indigo-150 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-xl pl-10 pr-10 py-2 text-sm font-semibold text-gray-800 focus:outline-none transition placeholder:text-gray-400 placeholder:font-normal"
+                                autoComplete="off"
+                            />
+                            {productSearch && (
+                                <button
+                                    type="button"
+                                    onClick={() => setProductSearch('')}
+                                    className="absolute right-3.5 text-gray-400 hover:text-gray-600 transition"
+                                >
+                                    <X size={16} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="overflow-x-auto min-h-[250px]">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-gray-200 bg-gray-50 text-xs font-semibold text-gray-600 uppercase">
-                                    <th className="px-4 py-2.5 text-left" style={{ width: '35%' }}>Product Name</th>
-                                    <th className="px-3 py-2.5 text-right" style={{ width: '15%' }}>Price (LKR)</th>
-                                    <th className="px-3 py-2.5 text-right" style={{ width: '12%' }}>Morning Delivered</th>
-                                    <th className="px-3 py-2.5 text-right" style={{ width: '12%' }}>Afternoon Delivered</th>
-                                    <th className="px-3 py-2.5 text-right" style={{ width: '12%' }}>Returns</th>
-                                    <th className="px-4 py-2.5 text-right" style={{ width: '10%' }}>Net Subtotal</th>
-                                    <th className="py-2.5 text-center" style={{ width: '4%' }}></th>
+                        <table className="w-full text-sm block md:table">
+                            <thead className="hidden md:table-header-group">
+                                <tr className="border-b border-gray-200 bg-gray-50 text-xs font-semibold text-gray-600 uppercase md:table-row">
+                                    <th className="px-4 py-2.5 text-left md:table-cell" style={{ width: '35%' }}>Product Name</th>
+                                    <th className="px-3 py-2.5 text-right md:table-cell" style={{ width: '15%' }}>Price (LKR)</th>
+                                    <th className="px-3 py-2.5 text-right md:table-cell" style={{ width: '12%' }}>Morning Delivered</th>
+                                    <th className="px-3 py-2.5 text-right md:table-cell" style={{ width: '12%' }}>Afternoon Delivered</th>
+                                    <th className="px-3 py-2.5 text-right md:table-cell" style={{ width: '12%' }}>Returns</th>
+                                    <th className="px-4 py-2.5 text-right md:table-cell" style={{ width: '10%' }}>Net Subtotal</th>
+                                    <th className="py-2.5 text-center md:table-cell" style={{ width: '4%' }}></th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200">
+                            <tbody className="divide-y divide-gray-200 block md:table-row-group">
                                 {items.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="7" className="text-center text-gray-400 py-12">
+                                    <tr className="block md:table-row">
+                                        <td colSpan="7" className="text-center text-gray-400 py-12 block md:table-cell">
                                             No products added yet. Choose a billing structure above or click 'Add Product Line'.
                                         </td>
                                     </tr>
+                                ) : filteredItems.length === 0 ? (
+                                    <tr className="block md:table-row">
+                                        <td colSpan="7" className="text-center text-gray-400 py-12 block md:table-cell">
+                                            No products match your filter. Clear the filter bar to show all.
+                                        </td>
+                                    </tr>
                                 ) : (
-                                    items.map((item, idx) => {
-                                        // Filter product suggestions locally
+                                    filteredItems.map((item) => {
+                                        const origIdx = item.originalIndex;
                                         const matchingProducts = item.productName
                                             ? dbProducts.filter(p => p.name.toLowerCase().includes(item.productName.toLowerCase()))
-                                            : [];
+                                            : dbProducts;
 
                                         const netSub = ((item.morningQty + item.afternoonQty) - item.returnQty) * (item.price || 0);
 
                                         return (
-                                            <tr key={idx} className="hover:bg-gray-50/50">
-                                                <td className="px-4 py-3 relative">
-                                                    {/* Autocomplete Input */}
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Type product name..."
-                                                        value={item.productName}
-                                                        onChange={(e) => handleItemFieldChange(idx, 'productName', e.target.value)}
-                                                        onFocus={() => setActiveRowSuggestIndex(idx)}
-                                                        className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-gray-700 focus:outline-none"
-                                                        required
-                                                    />
+                                            <tr key={origIdx} className="grid grid-cols-2 gap-3 p-4 border-b border-gray-150 hover:bg-gray-50/50 md:table-row md:p-0 md:border-b-0">
+                                                {/* Product Name */}
+                                                <td className="col-span-2 md:table-cell px-0 md:px-4 py-0 md:py-3 relative">
+                                                    <label className="block md:hidden text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Product Name</label>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Product name..."
+                                                            value={item.productName}
+                                                            onChange={(e) => handleItemFieldChange(origIdx, 'productName', e.target.value)}
+                                                            onFocus={() => setActiveRowSuggestIndex(origIdx)}
+                                                            className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-700 focus:outline-none"
+                                                            required
+                                                        />
+                                                    </div>
                                                     {/* Floating suggestions dropdown */}
-                                                    {activeRowSuggestIndex === idx && item.productName && matchingProducts.length > 0 && (
-                                                        <div className="absolute left-4 right-4 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto py-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                                                    {activeRowSuggestIndex === origIdx && matchingProducts.length > 0 && (
+                                                        <div className="absolute left-0 right-0 bottom-full mb-1 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 max-h-52 overflow-y-auto py-1">
                                                             {matchingProducts.map((p) => (
                                                                 <button
                                                                     key={p._id}
                                                                     type="button"
-                                                                    onClick={() => handleSelectProductSuggestion(idx, p.name)}
+                                                                    onClick={() => handleSelectProductSuggestion(origIdx, p.name)}
                                                                     className="w-full px-4 py-2 hover:bg-indigo-50 hover:text-indigo-700 transition text-left text-sm font-semibold"
                                                                 >
                                                                     {p.name}
@@ -487,55 +724,72 @@ export default function BakeryInvoiceFormPage() {
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="px-3 py-3">
+
+                                                {/* Price */}
+                                                <td className="col-span-1 md:table-cell px-0 md:px-3 py-0 md:py-3">
+                                                    <label className="block md:hidden text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Price (LKR)</label>
                                                     <input
                                                         type="number"
                                                         step="0.01"
                                                         min="0"
                                                         placeholder="0.00"
                                                         value={item.price === 0 ? '' : item.price}
-                                                        onChange={(e) => handleItemFieldChange(idx, 'price', e.target.value)}
+                                                        onChange={(e) => handleItemFieldChange(origIdx, 'price', e.target.value)}
                                                         className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg px-2 py-1.5 text-sm font-semibold text-right text-gray-700 focus:outline-none"
                                                     />
                                                 </td>
-                                                <td className="px-3 py-3">
+
+                                                {/* Morning Delivered */}
+                                                <td className="col-span-1 md:table-cell px-0 md:px-3 py-0 md:py-3">
+                                                    <label className="block md:hidden text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Morning Qty</label>
                                                     <input
                                                         type="number"
                                                         min="0"
                                                         placeholder="0"
                                                         value={item.morningQty === 0 ? '' : item.morningQty}
-                                                        onChange={(e) => handleItemFieldChange(idx, 'morningQty', e.target.value)}
+                                                        onChange={(e) => handleItemFieldChange(origIdx, 'morningQty', e.target.value)}
                                                         className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg px-2 py-1.5 text-sm font-semibold text-right text-gray-750 focus:outline-none"
                                                     />
                                                 </td>
-                                                <td className="px-3 py-3">
+
+                                                {/* Afternoon Delivered */}
+                                                <td className="col-span-1 md:table-cell px-0 md:px-3 py-0 md:py-3">
+                                                    <label className="block md:hidden text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Afternoon Qty</label>
                                                     <input
                                                         type="number"
                                                         min="0"
                                                         placeholder="0"
                                                         value={item.afternoonQty === 0 ? '' : item.afternoonQty}
-                                                        onChange={(e) => handleItemFieldChange(idx, 'afternoonQty', e.target.value)}
+                                                        onChange={(e) => handleItemFieldChange(origIdx, 'afternoonQty', e.target.value)}
                                                         className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg px-2 py-1.5 text-sm font-semibold text-right text-gray-750 focus:outline-none"
                                                     />
                                                 </td>
-                                                <td className="px-3 py-3">
+
+                                                {/* Returns */}
+                                                <td className="col-span-1 md:table-cell px-0 md:px-3 py-0 md:py-3">
+                                                    <label className="block md:hidden text-[10px] font-bold text-red-500 uppercase tracking-wider mb-1">Returns Qty</label>
                                                     <input
                                                         type="number"
                                                         min="0"
                                                         placeholder="0"
                                                         value={item.returnQty === 0 ? '' : item.returnQty}
-                                                        onChange={(e) => handleItemFieldChange(idx, 'returnQty', e.target.value)}
+                                                        onChange={(e) => handleItemFieldChange(origIdx, 'returnQty', e.target.value)}
                                                         className="w-full bg-white border border-gray-300 focus:border-red-500 focus:ring-1 focus:ring-red-500 rounded-lg px-2 py-1.5 text-sm font-semibold text-right text-red-600 focus:outline-none"
                                                     />
                                                 </td>
-                                                <td className="px-4 py-3 text-right font-bold text-gray-800">
-                                                    {formatPrice(netSub)}
+
+                                                {/* Net Subtotal */}
+                                                <td className="col-span-1 md:table-cell px-0 md:px-4 py-0 md:py-3 text-right font-bold text-gray-800 flex flex-col justify-end md:justify-start md:block">
+                                                    <label className="block md:hidden text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 text-right">Net Subtotal</label>
+                                                    <span className="md:inline-block py-1 md:py-0">{formatPrice(netSub)}</span>
                                                 </td>
-                                                <td className="py-3 text-center">
+
+                                                {/* Delete Action */}
+                                                <td className="col-span-1 md:table-cell px-0 py-0 md:py-3 text-center flex items-center justify-end md:justify-center">
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleRemoveItemRow(idx)}
-                                                        className="p-1 text-gray-400 hover:text-red-600 rounded transition"
+                                                        onClick={() => handleRemoveItemRow(origIdx)}
+                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                                                         title="Remove Row"
                                                     >
                                                         <Trash2 size={16} />

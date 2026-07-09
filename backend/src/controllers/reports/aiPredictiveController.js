@@ -7,6 +7,9 @@ import Payroll from '../../models/Payroll.js';
 import Installment from '../../models/Installment.js';
 import BankAccount from '../../models/BankAccount.js';
 import StockItem from '../../models/StockItem.js';
+import BakeryInvoice from '../../models/BakeryInvoice.js';
+import NuwaraEliyaDelivery from '../../models/NuwaraEliyaDelivery.js';
+import BakeryShop from '../../models/BakeryShop.js';
 
 /**
  * GET /api/reports/predictive/analytics
@@ -384,6 +387,128 @@ export const getPredictiveAnalytics = asyncHandler(async (req, res) => {
             },
             predictions,
             insights
+        }
+    });
+});
+
+export const getShopPredictivePatterns = asyncHandler(async (req, res) => {
+    let { shopName, dayOfWeek } = req.query; // dayOfWeek: 0 (Sunday) to 6 (Saturday), or absent = all days
+
+    // 1. Get list of all shops from BakeryShop and NuwaraEliyaDelivery structures
+    const bakeryShops = await BakeryShop.find().lean();
+    const nuwaraDeliveries = await NuwaraEliyaDelivery.find({ structureName: { $ne: '' } }).lean();
+
+    const shopNames = new Set(bakeryShops.map(s => s.name));
+    nuwaraDeliveries.forEach(del => {
+        if (del.structureName && del.structureName.trim()) {
+            shopNames.add(`Nuwara Eliya (${del.structureName})`);
+        }
+    });
+
+    const allShopsList = Array.from(shopNames).sort();
+
+    // Default shop to first one
+    if (!shopName && allShopsList.length > 0) {
+        shopName = allShopsList[0];
+    }
+
+    // Parse dayOfWeek — if undefined or empty, use null to mean "all days"
+    const filterByDay = (dayOfWeek !== undefined && dayOfWeek !== '');
+    const dayOfWeekNum = filterByDay ? parseInt(dayOfWeek) : null;
+
+    const predictions = [];
+    let countOfDays = 0;
+
+    if (shopName) {
+        const isNuwara = shopName.startsWith('Nuwara Eliya (');
+        const productData = {}; // productName -> { deliveredSum, returnedSum }
+
+        if (isNuwara) {
+            // Nuwara Eliya route prediction
+            const structureName = shopName.replace('Nuwara Eliya (', '').replace(')', '');
+            const trips = await NuwaraEliyaDelivery.find({ structureName }).lean();
+
+            const matchingTrips = filterByDay
+                ? trips.filter(t => new Date(t.date).getDay() === dayOfWeekNum)
+                : trips;
+
+            matchingTrips.forEach(trip => {
+                // Loaded items
+                trip.loadedItems.forEach(item => {
+                    if (!productData[item.productName]) {
+                        productData[item.productName] = { deliveredSum: 0, returnedSum: 0 };
+                    }
+                    productData[item.productName].deliveredSum += (item.qty || 0);
+                });
+
+                // Returned items + On-board items
+                trip.returnedItems.forEach(item => {
+                    if (!productData[item.productName]) {
+                        productData[item.productName] = { deliveredSum: 0, returnedSum: 0 };
+                    }
+                    productData[item.productName].returnedSum += (item.qty || 0);
+                });
+
+                trip.onBoardItems.forEach(item => {
+                    if (!productData[item.productName]) {
+                        productData[item.productName] = { deliveredSum: 0, returnedSum: 0 };
+                    }
+                    productData[item.productName].returnedSum += (item.qty || 0);
+                });
+            });
+
+            const uniqueDays = new Set(matchingTrips.map(t => new Date(t.date).toISOString().slice(0, 10)));
+            countOfDays = uniqueDays.size;
+
+        } else {
+            // Normal shop prediction
+            const invoices = await BakeryInvoice.find({ shopName }).lean();
+
+            const matchingInvoices = filterByDay
+                ? invoices.filter(inv => new Date(inv.date).getDay() === dayOfWeekNum)
+                : invoices;
+
+            matchingInvoices.forEach(inv => {
+                inv.items.forEach(item => {
+                    if (!productData[item.productName]) {
+                        productData[item.productName] = { deliveredSum: 0, returnedSum: 0 };
+                    }
+                    productData[item.productName].deliveredSum += ((item.morningQty || 0) + (item.afternoonQty || 0));
+                    productData[item.productName].returnedSum += (item.returnQty || 0);
+                });
+            });
+
+            const uniqueDays = new Set(matchingInvoices.map(inv => new Date(inv.date).toISOString().slice(0, 10)));
+            countOfDays = uniqueDays.size;
+        }
+
+        // Format and finalize the predictive array
+        Object.entries(productData).forEach(([prodName, stats]) => {
+            const denominator = countOfDays || 1;
+            const avgDelivered = stats.deliveredSum / denominator;
+            const avgReturned = stats.returnedSum / denominator;
+            const avgSold = Math.max(0, avgDelivered - avgReturned);
+            const recommendedQty = Math.ceil(avgSold * 1.1); // 10% safety margin
+
+            predictions.push({
+                productName: prodName,
+                avgDelivered: parseFloat(avgDelivered.toFixed(2)),
+                avgReturned: parseFloat(avgReturned.toFixed(2)),
+                avgSold: parseFloat(avgSold.toFixed(2)),
+                recommendedQty: recommendedQty || 0,
+                historicalDaysCount: countOfDays
+            });
+        });
+    }
+
+    res.json({
+        success: true,
+        data: {
+            shops: allShopsList,
+            selectedShop: shopName,
+            selectedDayOfWeek: dayOfWeekNum,
+            historicalDaysCount: countOfDays,
+            predictions: predictions.sort((a, b) => b.avgSold - a.avgSold)
         }
     });
 });

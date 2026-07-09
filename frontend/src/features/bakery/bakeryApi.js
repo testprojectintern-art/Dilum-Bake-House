@@ -76,4 +76,30 @@ export const bakeryApi = {
         const response = await api.get('/bakery/dashboard', { params });
         return response.data;
     },
+
+    // Nuwara Eliya Delivery Consignments
+    getNuwaraEliyaDeliveries: async (params = {}) => {
+        const response = await api.get('/bakery/nuwara-eliya', { params });
+        return response.data;
+    },
+    getLatestNuwaraEliyaOutstanding: async () => {
+        const response = await api.get('/bakery/nuwara-eliya/latest');
+        return response.data;
+    },
+    getNuwaraEliyaDeliveryById: async (id) => {
+        const response = await api.get(`/bakery/nuwara-eliya/${id}`);
+        return response.data;
+    },
+    createNuwaraEliyaDelivery: async (data) => {
+        const response = await api.post('/bakery/nuwara-eliya', data);
+        return response.data;
+    },
+    updateNuwaraEliyaDelivery: async (id, data) => {
+        const response = await api.put(`/bakery/nuwara-eliya/${id}`, data);
+        return response.data;
+    },
+    deleteNuwaraEliyaDelivery: async (id) => {
+        const response = await api.delete(`/bakery/nuwara-eliya/${id}`);
+        return response.data;
+    },
 };

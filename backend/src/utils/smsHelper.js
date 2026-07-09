@@ -41,7 +41,7 @@ export const sendSalesSms = async (order, invoice) => {
         const total = order.grandTotal;
 
         // Custom SMS message text
-        const message = `Dear ${order.customerSnapshot.name}, thank you for buying from Hoorawa! Bill No: ${invoiceNum}, Items: ${itemsSummary}. Total: LKR ${total.toFixed(2)}. paymentStatus: ${invoice?.paymentStatus || 'paid'}.`;
+        const message = `Dear ${order.customerSnapshot.name}, thank you for buying from Dilum Bake House! Bill No: ${invoiceNum}, Items: ${itemsSummary}. Total: LKR ${total.toFixed(2)}. paymentStatus: ${invoice?.paymentStatus || 'paid'}.`;
 
         console.log(`\n========================================`);
         console.log(`[SMS OUTBOX] Triggered send to: ${phone}`);
@@ -51,7 +51,7 @@ export const sendSalesSms = async (order, invoice) => {
         const params = new URLSearchParams({
             user_id: '1927',
             api_key: '3df0dbae-24c7-42f6-80fb-925c8ca35b50',
-            sender_id: 'HoorawaLK',
+            sender_id: 'DilumBake',
             contact: phone,
             message: message
         });
@@ -95,7 +95,7 @@ export const sendGeneralSms = async (phone, message) => {
         const params = new URLSearchParams({
             user_id: '1927',
             api_key: '3df0dbae-24c7-42f6-80fb-925c8ca35b50',
-            sender_id: 'HoorawaLK',
+            sender_id: 'DilumBake',
             contact: normalizedPhone,
             message: message
         });

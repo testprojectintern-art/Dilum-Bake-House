@@ -93,6 +93,7 @@ import ReturnsReportPage from './pages/reports/ReturnsReportPage';
 import FinancialSnapshotPage from './pages/reports/FinancialSnapshotPage';
 import HrReportsPage from './pages/reports/HrReportsPage';
 import AiPredictionsPage from './pages/reports/AiPredictionsPage';
+import ShopDayPredictionsPage from './pages/reports/ShopDayPredictionsPage';
 
 import BarcodeGeneratorPage from './pages/BarcodeGeneratorPage';
 import PettyCashPage from './pages/PettyCashPage';
@@ -111,6 +112,15 @@ import BakeryShopsPage from './pages/BakeryShopsPage';
 import BakeryStructuresPage from './pages/BakeryStructuresPage';
 import BakeryInvoicesPage from './pages/BakeryInvoicesPage';
 import BakeryInvoiceFormPage from './pages/BakeryInvoiceFormPage';
+
+import NuwaraEliyaDeliveriesPage from './pages/NuwaraEliyaDeliveriesPage';
+import NuwaraEliyaDetailPage from './pages/NuwaraEliyaDetailPage';
+import NuwaraEliyaLoadTripPage from './pages/NuwaraEliyaLoadTripPage';
+import NuwaraEliyaSettleTripPage from './pages/NuwaraEliyaSettleTripPage';
+
+import NuwaraEliyaLoadsPage from './pages/NuwaraEliyaLoadsPage';
+import NuwaraEliyaReturnsPage from './pages/NuwaraEliyaReturnsPage';
+import NuwaraEliyaOnBoardPage from './pages/NuwaraEliyaOnBoardPage';
 
 function App() {
   return (
@@ -234,6 +244,7 @@ function App() {
         <Route path="/reports/financial" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><FinancialSnapshotPage /></ProtectedRoute>} />
         <Route path="/reports/net-profit-analysis" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><NetProfitReportPage /></ProtectedRoute>} />
         <Route path="/reports/hr" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><HrReportsPage /></ProtectedRoute>} />
+        <Route path="/reports/shop-day-predictions" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><ShopDayPredictionsPage /></ProtectedRoute>} />
         <Route path="/reports/watch-analytics" element={<ProtectedRoute allowedRoles={['admin','manager','accountant']}><WatchAnalyticsPage /></ProtectedRoute>} />
 
         <Route path="/users"
@@ -251,6 +262,16 @@ function App() {
         <Route path="/bakery/invoices" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryInvoicesPage /></ProtectedRoute>} />
         <Route path="/bakery/invoices/new" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryInvoiceFormPage /></ProtectedRoute>} />
         <Route path="/bakery/invoices/:id/edit" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryInvoiceFormPage /></ProtectedRoute>} />
+
+        <Route path="/bakery/nuwara-eliya" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><NuwaraEliyaDeliveriesPage /></ProtectedRoute>} />
+        <Route path="/bakery/nuwara-eliya/loads" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><NuwaraEliyaLoadsPage /></ProtectedRoute>} />
+        <Route path="/bakery/nuwara-eliya/returns" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><NuwaraEliyaReturnsPage /></ProtectedRoute>} />
+        <Route path="/bakery/nuwara-eliya/on-board" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><NuwaraEliyaOnBoardPage /></ProtectedRoute>} />
+        <Route path="/bakery/nuwara-eliya/load-trip" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><NuwaraEliyaLoadTripPage /></ProtectedRoute>} />
+        <Route path="/bakery/nuwara-eliya/:id/settle" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><NuwaraEliyaSettleTripPage /></ProtectedRoute>} />
+        <Route path="/bakery/nuwara-eliya/:id" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><NuwaraEliyaDetailPage /></ProtectedRoute>} />
+        <Route path="/bakery/nuwara-eliya/:id/edit-load" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><NuwaraEliyaLoadTripPage /></ProtectedRoute>} />
+        <Route path="/bakery/nuwara-eliya/:id/edit-settlement" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><NuwaraEliyaSettleTripPage /></ProtectedRoute>} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

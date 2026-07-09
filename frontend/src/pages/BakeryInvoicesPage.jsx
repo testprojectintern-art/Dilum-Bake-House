@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Search, Plus, Loader2, Calendar, FileText, CheckCircle, AlertCircle,
+    Search, Plus, Loader2, Calendar, FileText, CheckCircle, AlertCircle, Eye,
     RotateCcw, DollarSign, Printer, Trash2, Edit, Edit3, ArrowRight, User, Download, MessageSquare, Phone
 } from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader';
@@ -41,6 +41,9 @@ export default function BakeryInvoicesPage() {
 
     // Modal state for delete confirm
     const [deletingInvoice, setDeletingInvoice] = useState(null);
+
+    // Modal state for view detail
+    const [viewingInvoice, setViewingInvoice] = useState(null);
 
     // Modal state for WhatsApp sharing
     const [whatsappInvoice, setWhatsappInvoice] = useState(null);
@@ -372,6 +375,10 @@ export default function BakeryInvoicesPage() {
                         <span>Afternoon Total:</span>
                         <span style="font-weight: 600; color: #1e293b;">${afternoonTotal.toFixed(2)} LKR</span>
                     </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: 800; background-color: #eff6ff; border-radius: 6px; padding: 6px 10px; color: #1e3a8a;">
+                        <span>Today Total (Delivered):</span>
+                        <span>${(morningTotal + afternoonTotal).toFixed(2)} LKR</span>
+                    </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #475569;">
                         <span>Returns Total:</span>
                         <span style="font-weight: 600; color: #dc2626;">-${returnsTotal.toFixed(2)} LKR</span>
@@ -428,6 +435,26 @@ export default function BakeryInvoicesPage() {
                 document.documentElement.classList.add('dark');
             }
             throw error;
+        }
+    };
+
+    // Direct download PDF (A4)
+    const handleDownloadPdf = async (invoice) => {
+        const toastId = toast.loading('Generating PDF...');
+        try {
+            const blob = await generateInvoicePdfBlob(invoice);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${invoice.invoiceNumber}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            toast.success('PDF downloaded!', { id: toastId });
+        } catch (err) {
+            console.error('PDF download failed', err);
+            toast.error('PDF generation failed.', { id: toastId });
         }
     };
 
@@ -522,10 +549,17 @@ export default function BakeryInvoicesPage() {
             text += `\n`;
         }
 
+        const morningTotal = morningItems.reduce((s, i) => s + i.morningQty * i.price, 0);
+        const afternoonTotal = afternoonItems.reduce((s, i) => s + i.afternoonQty * i.price, 0);
+        const returnTotal = returnItems.reduce((s, i) => s + i.returnQty * i.price, 0);
+        const todayTotal = morningTotal + afternoonTotal;
+
         text += `-------------------------------------\n`;
         text += `*BILL SUMMARY:*\n`;
-        text += `🚚 Delivered Total: LKR ${invoice.deliveredTotal.toFixed(2)}\n`;
-        text += `↩️ Returns Total: LKR ${invoice.returnsTotal.toFixed(2)}\n`;
+        if (morningTotal > 0) text += `☀️ Morning Total: LKR ${morningTotal.toFixed(2)}\n`;
+        if (afternoonTotal > 0) text += `🌤️ Afternoon Total: LKR ${afternoonTotal.toFixed(2)}\n`;
+        text += `📦 *Today Total (Delivered): LKR ${todayTotal.toFixed(2)}*\n`;
+        if (returnTotal > 0) text += `↩️ Less Returns: LKR ${returnTotal.toFixed(2)}\n`;
         text += `💵 Old Balance: LKR ${invoice.oldBalance.toFixed(2)}\n`;
         text += `💰 Grand Total: LKR ${invoice.grandTotal.toFixed(2)}\n`;
         text += `📥 Paid Today: LKR ${invoice.amountReceived.toFixed(2)}\n`;
@@ -766,7 +800,7 @@ export default function BakeryInvoicesPage() {
                         <span class="totals-value">${afternoonTotal.toFixed(2)} LKR</span>
                     </div>
                     <div class="totals-row" style="border-top: 1px solid #f3f4f6; padding-top: 2px; margin-top: 2px;">
-                        <span class="totals-label" style="font-weight: 600;">Total Delivered:</span>
+                        <span class="totals-label" style="font-weight: 600;">Today Total (Delivered):</span>
                         <span class="totals-value" style="font-weight: 700;">${invoice.deliveredTotal.toFixed(2)} LKR</span>
                     </div>
                     <div class="totals-row" style="color: #1e3a8a;">
@@ -898,6 +932,16 @@ export default function BakeryInvoicesPage() {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
+                            setViewingInvoice(row);
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
+                        title="View Details"
+                    >
+                        <Eye size={16} />
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
                             handlePrint(row);
                         }}
                         className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition"
@@ -918,7 +962,7 @@ export default function BakeryInvoicesPage() {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            handlePrint(row);
+                            handleDownloadPdf(row);
                         }}
                         className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition"
                         title="Download PDF"
@@ -1010,7 +1054,7 @@ export default function BakeryInvoicesPage() {
                         </div>
                     </div>
                     <div className="flex gap-2.5 w-full lg:w-auto justify-start">
-                        <div className="w-[140px] sm:w-44 flex-shrink-0">
+                        <div className="flex-1 sm:w-44 sm:flex-initial">
                             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">From Date</label>
                             <div className="relative">
                                 <Input
@@ -1022,7 +1066,7 @@ export default function BakeryInvoicesPage() {
                                 <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none hidden sm:block" />
                             </div>
                         </div>
-                        <div className="w-[140px] sm:w-44 flex-shrink-0">
+                        <div className="flex-1 sm:w-44 sm:flex-initial">
                             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">To Date</label>
                             <div className="relative">
                                 <Input
@@ -1221,6 +1265,221 @@ export default function BakeryInvoicesPage() {
                         </Button>
                     </div>
                 </div>
+            </Modal>
+
+            {/* View Details Modal */}
+            <Modal
+                isOpen={!!viewingInvoice}
+                onClose={() => setViewingInvoice(null)}
+                title="Invoice Details"
+            >
+                {viewingInvoice && (() => {
+                    const morningItems = viewingInvoice.items.filter(item => item.morningQty > 0);
+                    const afternoonItems = viewingInvoice.items.filter(item => item.afternoonQty > 0);
+                    const returnItems = viewingInvoice.items.filter(item => item.returnQty > 0);
+
+                    const morningTotal = morningItems.reduce((sum, item) => sum + (item.morningQty * item.price), 0);
+                    const afternoonTotal = afternoonItems.reduce((sum, item) => sum + (item.afternoonQty * item.price), 0);
+                    const returnsTotalCalculated = returnItems.reduce((sum, item) => sum + (item.returnQty * item.price), 0);
+                    const todayTotal = morningTotal + afternoonTotal;
+
+                    return (
+                        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+                            {/* Metadata */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                <div>
+                                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Invoice No</div>
+                                    <div className="font-mono font-bold text-sm text-indigo-600">{viewingInvoice.invoiceNumber}</div>
+                                </div>
+                                <div>
+                                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Date</div>
+                                    <div className="font-bold text-sm text-gray-800">{new Date(viewingInvoice.date).toLocaleDateString()}</div>
+                                </div>
+                                <div>
+                                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Shop Name</div>
+                                    <div className="font-bold text-sm text-gray-850 uppercase">{viewingInvoice.shopName}</div>
+                                </div>
+                                <div>
+                                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Phone</div>
+                                    <div className="font-bold text-sm text-gray-800">{viewingInvoice.shopPhone || 'N/A'}</div>
+                                </div>
+                            </div>
+
+                            {/* Morning Table */}
+                            {morningItems.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="font-bold text-indigo-700 text-xs uppercase tracking-wider">Morning Deliveries</h4>
+                                    <div className="border rounded-xl overflow-hidden">
+                                        <table className="w-full text-xs text-left">
+                                            <thead className="bg-indigo-50/50 text-indigo-900 font-bold uppercase border-b">
+                                                <tr>
+                                                    <th className="p-2.5">Item</th>
+                                                    <th className="p-2.5 text-right">Price</th>
+                                                    <th className="p-2.5 text-right">Qty</th>
+                                                    <th className="p-2.5 text-right">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {morningItems.map((item, i) => (
+                                                    <tr key={i} className="hover:bg-gray-50/50">
+                                                        <td className="p-2.5 font-semibold text-gray-800">{item.productName}</td>
+                                                        <td className="p-2.5 text-right text-gray-600">{item.price.toFixed(2)}</td>
+                                                        <td className="p-2.5 text-right text-gray-900 font-medium">{item.morningQty}</td>
+                                                        <td className="p-2.5 text-right font-bold text-gray-800">{(item.morningQty * item.price).toFixed(2)}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="bg-indigo-50/10 font-bold">
+                                                    <td colSpan="3" className="p-2.5 text-right text-gray-500">Morning Subtotal:</td>
+                                                    <td className="p-2.5 text-right text-indigo-700">{(morningTotal).toFixed(2)} LKR</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Afternoon Table */}
+                            {afternoonItems.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="font-bold text-indigo-700 text-xs uppercase tracking-wider">Afternoon Deliveries</h4>
+                                    <div className="border rounded-xl overflow-hidden">
+                                        <table className="w-full text-xs text-left">
+                                            <thead className="bg-indigo-50/50 text-indigo-900 font-bold uppercase border-b">
+                                                <tr>
+                                                    <th className="p-2.5">Item</th>
+                                                    <th className="p-2.5 text-right">Price</th>
+                                                    <th className="p-2.5 text-right">Qty</th>
+                                                    <th className="p-2.5 text-right">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {afternoonItems.map((item, i) => (
+                                                    <tr key={i} className="hover:bg-gray-50/50">
+                                                        <td className="p-2.5 font-semibold text-gray-800">{item.productName}</td>
+                                                        <td className="p-2.5 text-right text-gray-600">{item.price.toFixed(2)}</td>
+                                                        <td className="p-2.5 text-right text-gray-900 font-medium">{item.afternoonQty}</td>
+                                                        <td className="p-2.5 text-right font-bold text-gray-800">{(item.afternoonQty * item.price).toFixed(2)}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="bg-indigo-50/10 font-bold">
+                                                    <td colSpan="3" className="p-2.5 text-right text-gray-500">Afternoon Subtotal:</td>
+                                                    <td className="p-2.5 text-right text-indigo-700">{(afternoonTotal).toFixed(2)} LKR</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Returns Table */}
+                            {returnItems.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="font-bold text-red-700 text-xs uppercase tracking-wider">Returns Received</h4>
+                                    <div className="border rounded-xl overflow-hidden">
+                                        <table className="w-full text-xs text-left">
+                                            <thead className="bg-red-50/50 text-red-900 font-bold uppercase border-b">
+                                                <tr>
+                                                    <th className="p-2.5">Item</th>
+                                                    <th className="p-2.5 text-right">Price</th>
+                                                    <th className="p-2.5 text-right">Qty</th>
+                                                    <th className="p-2.5 text-right">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {returnItems.map((item, i) => (
+                                                    <tr key={i} className="hover:bg-gray-50/50">
+                                                        <td className="p-2.5 font-semibold text-gray-800">{item.productName}</td>
+                                                        <td className="p-2.5 text-right text-gray-600">{item.price.toFixed(2)}</td>
+                                                        <td className="p-2.5 text-right text-gray-900 font-medium">{item.returnQty}</td>
+                                                        <td className="p-2.5 text-right font-bold text-red-600">-{((item.returnQty || 0) * item.price).toFixed(2)}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="bg-red-50/10 font-bold">
+                                                    <td colSpan="3" className="p-2.5 text-right text-gray-500">Returns Subtotal:</td>
+                                                    <td className="p-2.5 text-right text-red-700">-{returnsTotalCalculated.toFixed(2)} LKR</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Special Note */}
+                            {viewingInvoice.specialNote && viewingInvoice.specialNote.trim() && (
+                                <div className="bg-amber-50 border border-amber-100 p-3.5 rounded-xl text-xs text-gray-700">
+                                    <span className="font-bold text-amber-800 uppercase block mb-1 text-[10px] tracking-wider">Special Remarks</span>
+                                    {viewingInvoice.specialNote}
+                                </div>
+                            )}
+
+                            {/* Summary Box */}
+                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex justify-end">
+                                <div className="w-full md:w-80 text-xs space-y-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Morning Total:</span>
+                                        <span className="font-semibold text-gray-800">{morningTotal.toFixed(2)} LKR</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Afternoon Total:</span>
+                                        <span className="font-semibold text-gray-800">{afternoonTotal.toFixed(2)} LKR</span>
+                                    </div>
+                                    <div className="flex justify-between font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded">
+                                        <span>Today Total (Delivered):</span>
+                                        <span>{todayTotal.toFixed(2)} LKR</span>
+                                    </div>
+                                    <div className="flex justify-between text-red-600">
+                                        <span>Less Returns:</span>
+                                        <span>-{returnsTotalCalculated.toFixed(2)} LKR</span>
+                                    </div>
+                                    <div className="flex justify-between border-b pb-2">
+                                        <span className="text-gray-500">Old Outstanding:</span>
+                                        <span className="font-semibold text-gray-800">{(viewingInvoice.oldBalance || 0).toFixed(2)} LKR</span>
+                                    </div>
+                                    <div className="flex justify-between font-bold text-sm">
+                                        <span>Grand Total:</span>
+                                        <span className="text-indigo-900 font-extrabold">{(viewingInvoice.grandTotal || 0).toFixed(2)} LKR</span>
+                                    </div>
+                                    <div className="flex justify-between text-emerald-600 font-bold border-b pb-2">
+                                        <span>Amount Paid Today:</span>
+                                        <span>-{(viewingInvoice.amountReceived || 0).toFixed(2)} LKR</span>
+                                    </div>
+                                    <div className="flex justify-between font-extrabold text-sm text-red-650">
+                                        <span>Net Outstanding:</span>
+                                        <span>{(viewingInvoice.newBalance || 0).toFixed(2)} LKR</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-4 border-t">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        handlePrint(viewingInvoice);
+                                        setViewingInvoice(null);
+                                    }}
+                                    className="flex items-center gap-1.5"
+                                >
+                                    <Printer size={14} />
+                                    Print Receipt
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        handleDownloadPdf(viewingInvoice);
+                                        setViewingInvoice(null);
+                                    }}
+                                    className="flex items-center gap-1.5"
+                                >
+                                    <Download size={14} />
+                                    Download PDF
+                                </Button>
+                                <Button onClick={() => setViewingInvoice(null)}>
+                                    Close
+                                </Button>
+                            </div>
+                        </div>
+                    );
+                })()}
             </Modal>
         </div>
     );

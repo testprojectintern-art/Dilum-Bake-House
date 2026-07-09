@@ -135,7 +135,7 @@ export default function BulkSmsPage() {
                                     onChange={(e) => setMessage(e.target.value)}
                                     maxLength={480}
                                     rows={6}
-                                    placeholder="Type your promotional message here... E.g., Dear Customer, get 20% off on all items this weekend at Hoorawa Bookshop! Use code PROMO20."
+                                    placeholder="Type your promotional message here... E.g., Dear Customer, get 20% off on all items this weekend at Dilum Bake House! Use code PROMO20."
                                     className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 outline-none resize-none transition shadow-sm font-sans"
                                 />
 

@@ -12,6 +12,13 @@ const bakeryShopSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        contacts: [
+            {
+                name: { type: String, trim: true },
+                role: { type: String, trim: true },
+                phone: { type: String, trim: true }
+            }
+        ],
         balance: {
             type: Number,
             default: 0,

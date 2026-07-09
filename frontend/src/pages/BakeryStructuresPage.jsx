@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit, Loader2, Save, FileText, PlusCircle } from 'lucide-react';
+import { Plus, Trash2, Edit, Loader2, Save, FileText, PlusCircle, Search } from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -30,6 +30,7 @@ export default function BakeryStructuresPage() {
     const [structureName, setStructureName] = useState('');
     const [prices, setPrices] = useState([]); // Array of { productName: '', price: 0 }
     const [deletingStructure, setDeletingStructure] = useState(null);
+    const [activeRowSuggestIndex, setActiveRowSuggestIndex] = useState(null);
 
     const structures = structuresData?.data || [];
     const dbProducts = productsData?.data || [];
@@ -38,12 +39,7 @@ export default function BakeryStructuresPage() {
     const handleOpenCreate = () => {
         setEditingStructure(null);
         setStructureName('');
-        // Populate all existing registered products with price = 0
-        const initialPrices = dbProducts.map(p => ({
-            productName: p.name,
-            price: 0
-        }));
-        setPrices(initialPrices);
+        setPrices([]);
         setIsFormOpen(true);
     };
 
@@ -51,25 +47,18 @@ export default function BakeryStructuresPage() {
         setEditingStructure(structure);
         setStructureName(structure.name);
         
-        // Merge structure prices with any new products in DB
-        const structPrices = [...structure.prices];
-        const structProdNames = structPrices.map(sp => sp.productName.toLowerCase());
-
-        dbProducts.forEach(p => {
-            if (!structProdNames.includes(p.name.toLowerCase())) {
-                structPrices.push({
-                    productName: p.name,
-                    price: 0
-                });
-            }
-        });
+        // Populate only existing structure prices
+        const structPrices = structure.prices ? structure.prices.map(p => ({
+            productName: p.productName,
+            price: p.price
+        })) : [];
 
         setPrices(structPrices);
         setIsFormOpen(true);
     };
 
     const handleAddCustomProductLine = () => {
-        setPrices(prev => [...prev, { productName: '', price: 0, isNew: true }]);
+        setPrices(prev => [...prev, { productName: '', price: 0 }]);
     };
 
     const handlePriceChange = (index, value) => {
@@ -87,6 +76,15 @@ export default function BakeryStructuresPage() {
             copy[index].productName = value;
             return copy;
         });
+    };
+
+    const handleSelectProductSuggestion = (index, name) => {
+        setPrices(prev => {
+            const copy = [...prev];
+            copy[index].productName = name;
+            return copy;
+        });
+        setActiveRowSuggestIndex(null);
     };
 
     const handleRemoveProductLine = (index) => {
@@ -267,47 +265,63 @@ export default function BakeryStructuresPage() {
                             </p>
                         ) : (
                             <div className="space-y-3">
-                                {prices.map((p, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                                        <div className="flex-1">
-                                            {p.isNew ? (
+                                {prices.map((p, idx) => {
+                                    const matchingProducts = p.productName
+                                        ? dbProducts.filter(prod => prod.name.toLowerCase().includes(p.productName.toLowerCase()))
+                                        : dbProducts;
+
+                                    return (
+                                        <div key={idx} className="flex items-center gap-3 bg-gray-50 p-2.5 rounded-lg border border-gray-100 relative">
+                                            <div className="flex-1 relative flex items-center">
                                                 <Input
-                                                    placeholder="Product Name"
+                                                    placeholder="Search and select product..."
                                                     value={p.productName}
                                                     onChange={(e) => handleProductNameChange(idx, e.target.value)}
+                                                    onFocus={() => setActiveRowSuggestIndex(idx)}
                                                     required
-                                                    className="w-full"
+                                                    className="pl-8 w-full"
                                                 />
-                                            ) : (
-                                                <span className="font-medium text-gray-700 text-sm pl-2 block truncate">
-                                                    {p.productName}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="w-40">
-                                            <div className="relative">
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0"
-                                                    placeholder="0.00"
-                                                    value={p.price === 0 ? '' : p.price}
-                                                    onChange={(e) => handlePriceChange(idx, e.target.value)}
-                                                    className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg pl-8 pr-3 py-1.5 text-sm font-semibold text-gray-700 focus:outline-none"
-                                                />
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">LKR</span>
+                                                <Search className="absolute left-2.5 text-gray-400 w-4 h-4 pointer-events-none z-10" />
+                                                {activeRowSuggestIndex === idx && matchingProducts.length > 0 && (
+                                                    <div className="absolute left-0 right-0 mt-12 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto py-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                                                        {matchingProducts.map((prod) => (
+                                                            <button
+                                                                key={prod._id}
+                                                                type="button"
+                                                                onClick={() => handleSelectProductSuggestion(idx, prod.name)}
+                                                                className="w-full px-4 py-2 hover:bg-indigo-50 hover:text-indigo-700 transition text-left text-sm font-semibold"
+                                                            >
+                                                                {prod.name}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
+                                            <div className="w-40 flex-shrink-0">
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        placeholder="0.00"
+                                                        value={p.price === 0 ? '' : p.price}
+                                                        onChange={(e) => handlePriceChange(idx, e.target.value)}
+                                                        className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg pl-12 pr-3 py-1.5 text-sm font-semibold text-gray-700 focus:outline-none"
+                                                    />
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">LKR</span>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveProductLine(idx)}
+                                                className="p-1.5 text-gray-400 hover:text-red-600 rounded transition shrink-0"
+                                                title="Remove Item"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveProductLine(idx)}
-                                            className="p-1.5 text-gray-400 hover:text-red-600 rounded transition shrink-0"
-                                            title="Remove Item"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -334,6 +348,14 @@ export default function BakeryStructuresPage() {
                 confirmText="Delete"
                 loading={deleteStructure.isPending}
             />
+
+            {/* Backdrop helper to dismiss row autocompletes */}
+            {activeRowSuggestIndex !== null && (
+                <div
+                    className="fixed inset-0 z-40 bg-transparent"
+                    onClick={() => setActiveRowSuggestIndex(null)}
+                />
+            )}
         </div>
     );
 }

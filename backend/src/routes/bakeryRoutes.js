@@ -16,7 +16,13 @@ import {
     createInvoice,
     updateInvoice,
     deleteInvoice,
-    getBakeryDashboard
+    getBakeryDashboard,
+    getNuwaraEliyaDeliveries,
+    getLatestNuwaraEliyaOutstanding,
+    getNuwaraEliyaDeliveryById,
+    createNuwaraEliyaDelivery,
+    updateNuwaraEliyaDelivery,
+    deleteNuwaraEliyaDelivery
 } from '../controllers/bakeryController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 
@@ -60,5 +66,16 @@ router.route('/invoices/:id')
     .get(getInvoiceById)
     .put(updateInvoice)
     .delete(deleteInvoice);
+
+// Nuwara Eliya Delivery Consignments
+router.route('/nuwara-eliya')
+    .get(getNuwaraEliyaDeliveries)
+    .post(createNuwaraEliyaDelivery);
+router.route('/nuwara-eliya/latest')
+    .get(getLatestNuwaraEliyaOutstanding);
+router.route('/nuwara-eliya/:id')
+    .get(getNuwaraEliyaDeliveryById)
+    .put(updateNuwaraEliyaDelivery)
+    .delete(deleteNuwaraEliyaDelivery);
 
 export default router;

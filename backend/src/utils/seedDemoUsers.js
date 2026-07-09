@@ -27,11 +27,11 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 const demoUsers = [
-    { firstName: 'Admin',     lastName: 'Owner',     email: 'admin@hoorawa.com',     password: 'Admin@123',     role: 'admin'     },
-    { firstName: 'Manager',   lastName: 'User',      email: 'manager@hoorawa.com',   password: 'Manager@123',   role: 'manager'   },
-    { firstName: 'Cashier',   lastName: 'User',      email: 'cashier@hoorawa.com',   password: 'Cashier@123',   role: 'cashier'   },
-    { firstName: 'Accountant',lastName: 'User',      email: 'accountant@hoorawa.com',password: 'Account@123',   role: 'accountant'},
-    { firstName: 'Employee',  lastName: 'User',      email: 'employee@hoorawa.com',  password: 'Employee@123',  role: 'employee'  },
+    { firstName: 'Admin',     lastName: 'Owner',     email: 'admin@dilumbakehouse.com',     password: 'Admin@123',     role: 'admin'     },
+    { firstName: 'Manager',   lastName: 'User',      email: 'manager@dilumbakehouse.com',   password: 'Manager@123',   role: 'manager'   },
+    { firstName: 'Cashier',   lastName: 'User',      email: 'cashier@dilumbakehouse.com',   password: 'Cashier@123',   role: 'cashier'   },
+    { firstName: 'Accountant',lastName: 'User',      email: 'accountant@dilumbakehouse.com',password: 'Account@123',   role: 'accountant'},
+    { firstName: 'Employee',  lastName: 'User',      email: 'employee@dilumbakehouse.com',  password: 'Employee@123',  role: 'employee'  },
 ];
 
 async function seed() {

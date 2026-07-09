@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import {
-    TrendingUp, Package, Factory, RotateCcw, DollarSign, Users, ArrowRight,
+    TrendingUp, Package, Factory, RotateCcw, DollarSign, Users, ArrowRight, Sparkles
 } from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
@@ -13,6 +13,7 @@ const reportGroups = [
             { title: 'Sales Summary', description: 'Overall sales metrics for a period', path: '/reports/sales', icon: TrendingUp },
             { title: 'Sales by Product', description: 'Top and bottom performing products', path: '/reports/sales-by-product', icon: Package },
             { title: 'Sales by Customer', description: 'Customer revenue and outstanding balances', path: '/reports/sales-by-customer', icon: Users },
+            { title: 'Shop Day Demand Prediction', description: 'Predict food item quantities needed by shop & day of week', path: '/reports/shop-day-predictions', icon: Sparkles },
         ],
     },
     {

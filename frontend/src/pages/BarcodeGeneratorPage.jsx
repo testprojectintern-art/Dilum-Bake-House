@@ -351,7 +351,7 @@ export default function BarcodeGeneratorPage() {
                                         <span className="barcode-text text-[8px] font-mono tracking-widest mt-0.5 text-gray-700">{p.barcode}</span>
                                     </div>
                                     {!printFormat.startsWith('roll_strap') && (
-                                        <p className="barcode-subtext text-[7px] text-gray-400 font-mono tracking-tighter uppercase">Hoorawa Watch Pvt Ltd</p>
+                                        <p className="barcode-subtext text-[7px] text-gray-400 font-mono tracking-tighter uppercase">Dilum Bake House</p>
                                     )}
                                 </div>
                             ))}
@@ -406,7 +406,7 @@ export default function BarcodeGeneratorPage() {
                                  <span className="label-code-text">{p.barcode}</span>
                              </div>
                             {!printFormat.startsWith('roll_strap') && (
-                                <div className="label-footer">Hoorawa Watch Pvt Ltd</div>
+                                <div className="label-footer">Dilum Bake House</div>
                             )}
                         </div>
                     ))}

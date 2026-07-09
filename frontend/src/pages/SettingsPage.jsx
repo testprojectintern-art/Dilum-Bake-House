@@ -445,9 +445,9 @@ export default function SettingsPage() {
             {activeTab === 'roadmap' && (
                 <div className="space-y-6">
                     <div className="bg-gradient-to-r from-primary-600 to-indigo-600 p-6 rounded-xl text-white shadow-md">
-                        <h3 className="text-xl font-bold">Hoorawa Watch POS & Wholesale Roadmap</h3>
+                        <h3 className="text-xl font-bold">Dilum Bake House Management Roadmap</h3>
                         <p className="text-sm text-primary-100 mt-2">
-                            A complete expansion roadmap tailored to retail watch distribution, stock control, and brand warranty management.
+                            A complete expansion roadmap tailored to bakery distribution, stock control, and wholesale billing management.
                         </p>
                     </div>
 

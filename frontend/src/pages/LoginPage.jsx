@@ -98,7 +98,7 @@ export default function LoginPage() {
                                 DILUM BAKE HOUSE
                             </span>
                             <span className="block text-[10px] tracking-widest text-slate-400 uppercase font-mono">
-                                BAKERY BILLING SYSTEM
+                                MILK BAR & HOSPITAL BILLING SYSTEM
                             </span>
                         </div>
                     </div>

@@ -327,7 +327,7 @@ html.dark .barcode-card-preview .barcode-text {
   color: #374151 !important; /* Always dark gray */
 }
 
-/* Card Subtext (e.g. Hoorawa POS) */
+/* Card Subtext (e.g. Dilum Bake House) */
 .barcode-card-preview .barcode-subtext,
 html.dark .barcode-card-preview .barcode-subtext {
   color: #9ca3af !important; /* Always medium-light gray */

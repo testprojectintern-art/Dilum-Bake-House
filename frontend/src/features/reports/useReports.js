@@ -45,18 +45,22 @@ export const useTopCustomers = (params = {}) => useQuery({
 export const useSalesSummary = (params = {}) => useQuery({
     queryKey: ['salesSummary', params],
     queryFn: () => salesReportsApi.summary(params),
+    staleTime: 0,
 });
 export const useSalesByProduct = (params = {}) => useQuery({
     queryKey: ['salesByProduct', params],
     queryFn: () => salesReportsApi.byProduct(params),
+    staleTime: 0,
 });
 export const useSalesByCustomer = (params = {}) => useQuery({
     queryKey: ['salesByCustomer', params],
     queryFn: () => salesReportsApi.byCustomer(params),
+    staleTime: 0,
 });
 export const useSalesTrend = (params = {}) => useQuery({
     queryKey: ['salesTrend', params],
     queryFn: () => salesReportsApi.trend(params),
+    staleTime: 0,
 });
 
 // Inventory

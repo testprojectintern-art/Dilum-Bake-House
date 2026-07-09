@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, Loader2, Phone, DollarSign, Edit } from 'lucide-react';
+import { Search, Plus, Loader2, Phone, DollarSign, Edit, Trash2 } from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -17,6 +17,7 @@ export default function BakeryShopsPage() {
     const [shopName, setShopName] = useState('');
     const [shopPhone, setShopPhone] = useState('');
     const [shopBalance, setShopBalance] = useState('0');
+    const [contacts, setContacts] = useState([]); // Array of { name: '', role: 'Owner', phone: '' }
 
     const { data, isLoading } = useBakeryShops(search);
     const saveShop = useCreateBakeryShop();
@@ -28,6 +29,7 @@ export default function BakeryShopsPage() {
         setShopName('');
         setShopPhone('');
         setShopBalance('0');
+        setContacts([]);
         setIsFormOpen(true);
     };
 
@@ -36,7 +38,24 @@ export default function BakeryShopsPage() {
         setShopName(shop.name);
         setShopPhone(shop.phone || '');
         setShopBalance(String(shop.balance || 0));
+        setContacts(shop.contacts || []);
         setIsFormOpen(true);
+    };
+
+    const handleAddContactLine = () => {
+        setContacts(prev => [...prev, { name: '', role: 'Owner', phone: '' }]);
+    };
+
+    const handleRemoveContactLine = (idx) => {
+        setContacts(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const handleContactChange = (idx, field, val) => {
+        setContacts(prev => {
+            const copy = [...prev];
+            copy[idx][field] = val;
+            return copy;
+        });
     };
 
     const handleSubmit = (e) => {
@@ -48,6 +67,7 @@ export default function BakeryShopsPage() {
                 name: shopName,
                 phone: shopPhone,
                 balance: Number(shopBalance),
+                contacts: contacts.filter(c => c.name.trim() || c.phone.trim())
             },
             {
                 onSuccess: () => {
@@ -74,14 +94,34 @@ export default function BakeryShopsPage() {
         },
         {
             key: 'phone',
-            label: 'Phone Number',
-            render: (row) => row.phone ? (
-                <div className="flex items-center gap-1 text-gray-600">
-                    <Phone size={14} />
-                    <span>{row.phone}</span>
+            label: 'Phone Number & Contacts',
+            render: (row) => (
+                <div className="space-y-1">
+                    {row.phone && (
+                        <div className="flex items-center gap-1 text-gray-700 font-semibold text-xs">
+                            <Phone size={12} className="text-gray-400" />
+                            <span>{row.phone}</span>
+                        </div>
+                    )}
+                    {row.contacts && row.contacts.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                            {row.contacts.map((c, i) => (
+                                <span 
+                                    key={i} 
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-750 border border-indigo-150"
+                                    title={`${c.name} (${c.role}): ${c.phone}`}
+                                >
+                                    <span className="text-[9px] uppercase tracking-wider text-indigo-500 font-bold mr-1">{c.role}:</span>
+                                    <span>{c.phone}</span>
+                                    {c.name && <span className="text-gray-400 font-normal ml-0.5">({c.name})</span>}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                    {!row.phone && (!row.contacts || row.contacts.length === 0) && (
+                        <span className="text-gray-400 text-xs">—</span>
+                    )}
                 </div>
-            ) : (
-                <span className="text-gray-400 text-xs">—</span>
             ),
         },
         {
@@ -171,8 +211,8 @@ export default function BakeryShopsPage() {
                         disabled={!!editingShop} // Don't allow changing shop name, since invoices reference it by name string
                     />
                     <Input
-                        label="Phone Number(s)"
-                        placeholder="e.g. 0762125472, 0774334046 (separate with commas)"
+                        label="Primary Phone Number"
+                        placeholder="e.g. 0762125472"
                         value={shopPhone}
                         onChange={(e) => setShopPhone(e.target.value)}
                     />
@@ -186,7 +226,66 @@ export default function BakeryShopsPage() {
                         required
                     />
 
-                    <div className="flex justify-end gap-2 pt-4">
+                    {/* Contacts Management */}
+                    <div className="border-t pt-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <label className="block text-sm font-semibold text-gray-700">Shop Contacts / Staff Numbers</label>
+                            <button
+                                type="button"
+                                onClick={handleAddContactLine}
+                                className="text-xs text-indigo-650 hover:text-indigo-850 font-bold flex items-center gap-1"
+                            >
+                                <Plus size={14} />
+                                Add Contact Number
+                            </button>
+                        </div>
+                        {contacts.length === 0 ? (
+                            <p className="text-xs text-gray-400 italic">No contacts added yet. Add numbers for Owner, Manager, Worker, etc.</p>
+                        ) : (
+                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                {contacts.map((c, idx) => (
+                                    <div key={idx} className="flex gap-2 items-center bg-gray-50 p-2 rounded-lg border border-gray-200 animate-in fade-in duration-100">
+                                        <input
+                                            type="text"
+                                            placeholder="Contact Name"
+                                            value={c.name}
+                                            onChange={(e) => handleContactChange(idx, 'name', e.target.value)}
+                                            className="flex-1 bg-white border border-gray-300 rounded px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-indigo-500 text-gray-700"
+                                            required
+                                        />
+                                        <select
+                                            value={c.role}
+                                            onChange={(e) => handleContactChange(idx, 'role', e.target.value)}
+                                            className="w-24 bg-white border border-gray-300 rounded px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-indigo-500 text-gray-700"
+                                        >
+                                            <option value="Owner">Owner</option>
+                                            <option value="Manager">Manager</option>
+                                            <option value="Worker">Worker</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                        <input
+                                            type="text"
+                                            placeholder="Phone Number"
+                                            value={c.phone}
+                                            onChange={(e) => handleContactChange(idx, 'phone', e.target.value)}
+                                            className="w-32 bg-white border border-gray-300 rounded px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-indigo-500 text-gray-750"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveContactLine(idx)}
+                                            className="p-1.5 text-gray-400 hover:text-red-650 rounded transition shrink-0"
+                                            title="Remove Contact"
+                                        >
+                                            <Trash2 size={15} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4 border-t">
                         <Button variant="outline" onClick={() => setIsFormOpen(false)}>
                             Cancel
                         </Button>

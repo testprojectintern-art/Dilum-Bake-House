@@ -18,7 +18,7 @@ import {
 import { getFinancialSnapshot } from '../controllers/reports/financialReportsController.js';
 import { getNetProfitAnalysis } from '../controllers/reports/netProfitController.js';
 import { getHeadcountReport, getAttendanceReport, getLeavePatternsReport, getPayrollSummaryReport } from '../controllers/reports/hrReportsController.js';
-import { getPredictiveAnalytics } from '../controllers/reports/aiPredictiveController.js';
+import { getPredictiveAnalytics, getShopPredictivePatterns } from '../controllers/reports/aiPredictiveController.js';
 import { 
     getInventoryAging, 
     getBrandProfitability, 
@@ -63,6 +63,7 @@ router.get('/sales/summary', fullAccess, getSalesSummary);
 router.get('/sales/by-product', fullAccess, getSalesByProduct);
 router.get('/sales/by-customer', fullAccess, getSalesByCustomer);
 router.get('/sales/trend', fullAccess, getSalesTrend);
+router.get('/shop-predictive-patterns', fullAccess, getShopPredictivePatterns);
 
 // Inventory reports
 router.get('/inventory/valuation', fullAccess, getStockValuation);

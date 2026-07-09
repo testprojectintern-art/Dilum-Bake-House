@@ -28,16 +28,48 @@ const menuItems = [
         allowedRoles: ALL_ROLES,
     },
     {
-        label: 'Bakery Billing',
+        label: 'Milk Bar & Hospital',
         id: 'bakery',
         icon: FileText,
         allowedRoles: ALL_ROLES,
         children: [
             { label: 'Daily Invoices', path: '/bakery/invoices', allowedRoles: ALL_ROLES },
-            { label: 'Pricing Structures', path: '/bakery/structures', allowedRoles: ALL_ROLES },
-            { label: 'Product Registry', path: '/bakery/products', allowedRoles: ALL_ROLES },
             { label: 'Shop Balances', path: '/bakery/shops', allowedRoles: ALL_ROLES },
         ],
+    },
+    {
+        label: 'Product Registry',
+        id: 'bakery-products',
+        icon: Package,
+        path: '/bakery/products',
+        allowedRoles: ALL_ROLES,
+    },
+    {
+        label: 'Pricing Structures',
+        id: 'bakery-structures',
+        icon: Calculator,
+        path: '/bakery/structures',
+        allowedRoles: ALL_ROLES,
+    },
+    {
+        label: 'Nuwara Eliya Delivery',
+        id: 'nuwara-eliya',
+        icon: Truck,
+        allowedRoles: ALL_ROLES,
+        children: [
+            { label: 'Trip Settlements', path: '/bakery/nuwara-eliya', allowedRoles: ALL_ROLES },
+            { label: 'New Trip Load', path: '/bakery/nuwara-eliya/load-trip', allowedRoles: ALL_ROLES },
+            { label: 'Loaded Items (Loads)', path: '/bakery/nuwara-eliya/loads', allowedRoles: ALL_ROLES },
+            { label: 'Unsold Returns', path: '/bakery/nuwara-eliya/returns', allowedRoles: ALL_ROLES },
+            { label: 'On-board Stock', path: '/bakery/nuwara-eliya/on-board', allowedRoles: ALL_ROLES },
+        ],
+    },
+    {
+        label: 'Reports',
+        id: 'reports',
+        icon: BarChart3,
+        path: '/reports',
+        allowedRoles: ALL_ROLES,
     },
 ];
 

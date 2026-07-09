@@ -3,6 +3,7 @@ import BakeryProduct from '../models/BakeryProduct.js';
 import BakeryShop from '../models/BakeryShop.js';
 import BakeryBillingStructure from '../models/BakeryBillingStructure.js';
 import BakeryInvoice from '../models/BakeryInvoice.js';
+import NuwaraEliyaDelivery from '../models/NuwaraEliyaDelivery.js';
 
 // Helper: Generate Invoice Number (e.g. DBH-20260708-001)
 const generateInvoiceNumber = async (date) => {
@@ -42,7 +43,7 @@ const autoSaveProducts = async (items, userId) => {
 };
 
 // Helper: Get or Create Shop, and Update Balance
-const handleShopBalanceOnCreate = async (shopName, shopPhone, newBalance, oldBalance, userId) => {
+const handleShopBalanceOnCreate = async (shopName, shopPhone, newBalance, oldBalance, userId, contacts) => {
     const normalizedShop = shopName.trim();
     let shop = await BakeryShop.findOne({
         name: { $regex: new RegExp(`^${normalizedShop}$`, 'i') }
@@ -54,12 +55,16 @@ const handleShopBalanceOnCreate = async (shopName, shopPhone, newBalance, oldBal
         shop = await BakeryShop.create({
             name: normalizedShop,
             phone: shopPhone ? shopPhone.trim() : '',
+            contacts: contacts || [],
             balance: newBalance,
             createdBy: userId
         });
     } else {
         if (shopPhone) {
             shop.phone = shopPhone.trim();
+        }
+        if (contacts !== undefined) {
+            shop.contacts = contacts;
         }
         shop.balance += balanceChange;
         await shop.save();
@@ -118,7 +123,9 @@ export const getShops = asyncHandler(async (req, res) => {
     if (search) {
         filter.$or = [
             { name: { $regex: search, $options: 'i' } },
-            { phone: { $regex: search, $options: 'i' } }
+            { phone: { $regex: search, $options: 'i' } },
+            { "contacts.name": { $regex: search, $options: 'i' } },
+            { "contacts.phone": { $regex: search, $options: 'i' } }
         ];
     }
     const shops = await BakeryShop.find(filter).sort({ name: 1 });
@@ -126,7 +133,7 @@ export const getShops = asyncHandler(async (req, res) => {
 });
 
 export const createShop = asyncHandler(async (req, res) => {
-    const { name, phone, balance } = req.body;
+    const { name, phone, balance, contacts } = req.body;
     if (!name) {
         res.status(400);
         throw new Error('Shop name is required');
@@ -140,12 +147,14 @@ export const createShop = asyncHandler(async (req, res) => {
     if (shop) {
         shop.phone = phone ? phone.trim() : shop.phone;
         if (balance !== undefined) shop.balance = Number(balance);
+        if (contacts !== undefined) shop.contacts = contacts;
         await shop.save();
     } else {
         shop = await BakeryShop.create({
             name: normalizedName,
             phone: phone ? phone.trim() : '',
             balance: balance !== undefined ? Number(balance) : 0,
+            contacts: contacts || [],
             createdBy: req.user._id
         });
     }
@@ -161,7 +170,9 @@ export const suggestShops = asyncHandler(async (req, res) => {
     const shops = await BakeryShop.find({
         $or: [
             { name: { $regex: search, $options: 'i' } },
-            { phone: { $regex: search, $options: 'i' } }
+            { phone: { $regex: search, $options: 'i' } },
+            { "contacts.name": { $regex: search, $options: 'i' } },
+            { "contacts.phone": { $regex: search, $options: 'i' } }
         ]
     }).limit(10);
     res.json({ success: true, data: shops });
@@ -323,7 +334,8 @@ export const createInvoice = asyncHandler(async (req, res) => {
         items,
         oldBalance,
         amountReceived,
-        specialNote
+        specialNote,
+        contacts
     } = req.body;
 
     if (!shopName) {
@@ -391,7 +403,7 @@ export const createInvoice = asyncHandler(async (req, res) => {
     });
 
     // Update shop balance
-    await handleShopBalanceOnCreate(shopName, shopPhone, newBalance, oBalance, req.user._id);
+    await handleShopBalanceOnCreate(shopName, shopPhone, newBalance, oBalance, req.user._id, contacts);
 
     res.status(201).json({ success: true, data: invoice });
 });
@@ -406,7 +418,8 @@ export const updateInvoice = asyncHandler(async (req, res) => {
         items,
         oldBalance,
         amountReceived,
-        specialNote
+        specialNote,
+        contacts
     } = req.body;
 
     const invoice = await BakeryInvoice.findById(req.params.id);
@@ -483,6 +496,7 @@ export const updateInvoice = asyncHandler(async (req, res) => {
 
     if (shop) {
         if (shopPhone) shop.phone = shopPhone.trim();
+        if (contacts !== undefined) shop.contacts = contacts;
         shop.balance += (newBalance - previousNewBalance);
         await shop.save();
     }
@@ -521,7 +535,12 @@ export const getBakeryDashboard = asyncHandler(async (req, res) => {
 
     // 2. Outstanding Balance
     const shops = await BakeryShop.find();
-    const totalOutstanding = shops.reduce((sum, s) => sum + (s.balance || 0), 0);
+    let totalOutstanding = shops.reduce((sum, s) => sum + (s.balance || 0), 0);
+
+    const latestNuwaraEliya = await NuwaraEliyaDelivery.findOne().sort({ date: -1, createdAt: -1 });
+    if (latestNuwaraEliya) {
+        totalOutstanding += (latestNuwaraEliya.nextOutstanding || 0) + (latestNuwaraEliya.shopsOutstanding || 0);
+    }
 
     // 3. Determine Date Range for Filtered Metrics
     let start, end;
@@ -539,17 +558,36 @@ export const getBakeryDashboard = asyncHandler(async (req, res) => {
         date: { $gte: start, $lte: end }
     });
 
+    const nuwaraEliyaDeliveries = await NuwaraEliyaDelivery.find({
+        date: { $gte: start, $lte: end }
+    });
+
     let rangeDeliveries = 0;
     let rangeReturns = 0;
     let rangeReceived = 0;
+    let rangeNetSales = 0;
 
     invoices.forEach(inv => {
         rangeDeliveries += (inv.deliveredTotal || 0);
         rangeReturns += (inv.returnsTotal || 0);
         rangeReceived += (inv.amountReceived || 0);
+        rangeNetSales += ((inv.deliveredTotal || 0) - (inv.returnsTotal || 0));
     });
 
-    const rangeSales = rangeDeliveries - rangeReturns;
+    let nuwaraDeliveries = 0;
+    let nuwaraReturns = 0;
+    let nuwaraReceived = 0;
+    let nuwaraSales = 0;
+
+    nuwaraEliyaDeliveries.forEach(del => {
+        nuwaraDeliveries += (del.loadCost || 0);
+        nuwaraReturns += (del.returnsCost || 0);
+        nuwaraReceived += ((del.bankDeposits || 0) + (del.amountPaid || 0));
+        nuwaraSales += ((del.loadCost || 0) - (del.returnsCost || 0) - (del.onBoardStockCost || 0));
+    });
+
+    const totalPeriodSales = rangeNetSales + nuwaraSales;
+    const totalPeriodReceived = rangeReceived + nuwaraReceived;
 
     // 5. Today's Invoices query
     const startOfToday = new Date();
@@ -561,17 +599,55 @@ export const getBakeryDashboard = asyncHandler(async (req, res) => {
         date: { $gte: startOfToday, $lte: endOfToday }
     });
 
+    const todayNuwaraDeliveries = await NuwaraEliyaDelivery.find({
+        date: { $gte: startOfToday, $lte: endOfToday }
+    });
+
     let todaySales = 0;
     todayInvoices.forEach(inv => {
         todaySales += ((inv.deliveredTotal || 0) - (inv.returnsTotal || 0));
     });
+    todayNuwaraDeliveries.forEach(del => {
+        todaySales += ((del.loadCost || 0) - (del.returnsCost || 0) - (del.onBoardStockCost || 0));
+    });
 
-    // 6. Recent Invoices (matching range)
-    const recentInvoices = await BakeryInvoice.find({
+    // 6. Recent transactions (matching range)
+    const recentInvoicesQuery = await BakeryInvoice.find({
         date: { $gte: start, $lte: end }
     })
     .sort({ date: -1, createdAt: -1 })
     .limit(10);
+
+    const recentNuwaraQuery = await NuwaraEliyaDelivery.find({
+        date: { $gte: start, $lte: end }
+    })
+    .sort({ date: -1, createdAt: -1 })
+    .limit(10);
+
+    const combinedRecent = [
+        ...recentInvoicesQuery.map(inv => ({
+            _id: inv._id,
+            invoiceNumber: inv.invoiceNumber,
+            shopName: inv.shopName,
+            date: inv.date,
+            grandTotal: inv.grandTotal,
+            amountReceived: inv.amountReceived,
+            newBalance: inv.newBalance,
+            type: 'bakery'
+        })),
+        ...recentNuwaraQuery.map(del => ({
+            _id: del._id,
+            invoiceNumber: del.billNumber,
+            shopName: `Nuwara Eliya (${del.structureName || 'Route'})`,
+            date: del.date,
+            grandTotal: (del.loadCost || 0) - (del.returnsCost || 0) - (del.onBoardStockCost || 0),
+            amountReceived: (del.bankDeposits || 0) + (del.amountPaid || 0),
+            newBalance: (del.nextOutstanding || 0) + (del.shopsOutstanding || 0),
+            type: 'nuwara-eliya'
+        }))
+    ]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 10);
 
     // 7. Top Shops (Inside range)
     const topShopsAggregation = await BakeryInvoice.aggregate([
@@ -586,16 +662,38 @@ export const getBakeryDashboard = asyncHandler(async (req, res) => {
                 totalSales: { $sum: { $subtract: ["$deliveredTotal", "$returnsTotal"] } },
                 totalReceived: { $sum: "$amountReceived" }
             }
-        },
-        { $sort: { totalSales: -1 } },
-        { $limit: 5 }
+        }
     ]);
 
-    const topShops = topShopsAggregation.map(item => ({
-        shopName: item._id,
-        totalSales: item.totalSales,
-        totalReceived: item.totalReceived
-    }));
+    const topNuwaraAggregation = await NuwaraEliyaDelivery.aggregate([
+        {
+            $match: {
+                date: { $gte: start, $lte: end }
+            }
+        },
+        {
+            $group: {
+                _id: "$structureName",
+                totalSales: { $sum: { $subtract: [{ $subtract: ["$loadCost", "$returnsCost"] }, "$onBoardStockCost"] } },
+                totalReceived: { $sum: { $add: ["$bankDeposits", "$amountPaid"] } }
+            }
+        }
+    ]);
+
+    const combinedShops = [
+        ...topShopsAggregation.map(item => ({
+            shopName: item._id,
+            totalSales: item.totalSales,
+            totalReceived: item.totalReceived
+        })),
+        ...topNuwaraAggregation.map(item => ({
+            shopName: `Nuwara Eliya (${item._id || 'Route'})`,
+            totalSales: item.totalSales,
+            totalReceived: item.totalReceived
+        }))
+    ]
+    .sort((a, b) => b.totalSales - a.totalSales)
+    .slice(0, 5);
 
     // 8. Trend Chart (Daily if <= 31 days, otherwise Monthly)
     const diffTime = Math.abs(end - start);
@@ -621,12 +719,24 @@ export const getBakeryDashboard = asyncHandler(async (req, res) => {
                 ret += (inv.returnsTotal || 0);
             });
 
+            const dayNuwara = await NuwaraEliyaDelivery.find({
+                date: { $gte: dayStart, $lte: dayEnd }
+            });
+            let nuwaraDelVal = 0;
+            let nuwaraRetVal = 0;
+            let nuwaraNetVal = 0;
+            dayNuwara.forEach(d => {
+                nuwaraDelVal += (d.loadCost || 0);
+                nuwaraRetVal += (d.returnsCost || 0);
+                nuwaraNetVal += ((d.loadCost || 0) - (d.returnsCost || 0) - (d.onBoardStockCost || 0));
+            });
+
             const dayLabel = current.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
             trendData.push({
                 monthLabel: dayLabel,
-                sales: del - ret,
-                deliveries: del,
-                returns: ret
+                sales: (del - ret) + nuwaraNetVal,
+                deliveries: del + nuwaraDelVal,
+                returns: ret + nuwaraRetVal
             });
 
             current.setDate(current.getDate() + 1);
@@ -648,12 +758,24 @@ export const getBakeryDashboard = asyncHandler(async (req, res) => {
                 ret += (inv.returnsTotal || 0);
             });
 
+            const monthNuwara = await NuwaraEliyaDelivery.find({
+                date: { $gte: mStart, $lte: mEnd }
+            });
+            let nuwaraDelVal = 0;
+            let nuwaraRetVal = 0;
+            let nuwaraNetVal = 0;
+            monthNuwara.forEach(d => {
+                nuwaraDelVal += (d.loadCost || 0);
+                nuwaraRetVal += (d.returnsCost || 0);
+                nuwaraNetVal += ((d.loadCost || 0) - (d.returnsCost || 0) - (d.onBoardStockCost || 0));
+            });
+
             const monthLabel = current.toLocaleString('en-US', { month: 'short', year: '2-digit' });
             trendData.push({
                 monthLabel,
-                sales: del - ret,
-                deliveries: del,
-                returns: ret
+                sales: (del - ret) + nuwaraNetVal,
+                deliveries: del + nuwaraDelVal,
+                returns: ret + nuwaraRetVal
             });
 
             current.setMonth(current.getMonth() + 1);
@@ -665,16 +787,289 @@ export const getBakeryDashboard = asyncHandler(async (req, res) => {
         success: true,
         data: {
             kpis: {
-                monthlySales: rangeSales,
-                monthlyReceived: rangeReceived,
+                monthlySales: totalPeriodSales,
+                monthlyReceived: totalPeriodReceived,
                 totalOutstanding,
                 todaySales,
                 shopCount,
                 productCount
             },
-            recentInvoices,
-            topShops,
+            recentInvoices: combinedRecent,
+            topShops: combinedShops,
             trendData
         }
     });
+});
+
+// Helper: Generate Nuwara Eliya Delivery Bill Number (e.g. NED-20260709-001)
+const generateNuwaraEliyaBillNumber = async (date) => {
+    const billDate = date ? new Date(date) : new Date();
+    const yyyy = billDate.getFullYear();
+    const mm = String(billDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(billDate.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}${mm}${dd}`;
+
+    const startOfDate = new Date(billDate);
+    startOfDate.setHours(0, 0, 0, 0);
+    const endOfDate = new Date(billDate);
+    endOfDate.setHours(23, 59, 59, 999);
+
+    const count = await NuwaraEliyaDelivery.countDocuments({
+        date: { $gte: startOfDate, $lte: endOfDate }
+    });
+    const serial = String(count + 1).padStart(3, '0');
+    return `NED-${dateStr}-${serial}`;
+};
+
+// ── Nuwara Eliya Delivery Controllers ─────────────────────────────────
+export const getNuwaraEliyaDeliveries = asyncHandler(async (req, res) => {
+    const { startDate, endDate, page = 1, limit = 15 } = req.query;
+    const filter = {};
+
+    if (startDate && endDate) {
+        filter.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate)
+        };
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const count = await NuwaraEliyaDelivery.countDocuments(filter);
+    const deliveries = await NuwaraEliyaDelivery.find(filter)
+        .sort({ date: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit));
+
+    res.json({
+        success: true,
+        count,
+        totalPages: Math.ceil(count / Number(limit)),
+        currentPage: Number(page),
+        data: deliveries
+    });
+});
+
+export const getLatestNuwaraEliyaOutstanding = asyncHandler(async (req, res) => {
+    const latest = await NuwaraEliyaDelivery.findOne().sort({ date: -1, createdAt: -1 });
+    res.json({
+        success: true,
+        nextOutstanding: latest ? (latest.nextOutstanding || 0) : 0,
+        onBoardStockCost: latest ? (latest.onBoardStockCost || 0) : 0,
+        shopsOutstanding: latest ? (latest.shopsOutstanding || 0) : 0
+    });
+});
+
+export const getNuwaraEliyaDeliveryById = asyncHandler(async (req, res) => {
+    const delivery = await NuwaraEliyaDelivery.findById(req.params.id);
+    if (!delivery) {
+        res.status(404);
+        throw new Error('Nuwara Eliya delivery record not found');
+    }
+    res.json({ success: true, data: delivery });
+});
+
+export const createNuwaraEliyaDelivery = asyncHandler(async (req, res) => {
+    const {
+        date,
+        loadedItems,
+        previousOutstanding,
+        previousOnBoardStockCost,
+        previousShopsOutstanding,
+        bankDeposits,
+        returnedItems,
+        onBoardItems,
+        shopsOutstanding,
+        amountPaid,
+        specialRemarks,
+        structureId,
+        structureName,
+        status
+    } = req.body;
+
+    // Filter out loaded/returned/on-board items with qty === 0 or empty product name
+    const validLoadedItems = (loadedItems || []).filter(item => item.productName && item.productName.trim() !== '' && Number(item.qty || 0) > 0);
+    const validReturnedItems = (returnedItems || []).filter(item => item.productName && item.productName.trim() !== '' && Number(item.qty || 0) > 0);
+    const validOnBoardItems = (onBoardItems || []).filter(item => item.productName && item.productName.trim() !== '' && Number(item.qty || 0) > 0);
+
+    // Auto-save any new products in loaded, returned, or on-board items
+    if (validLoadedItems.length > 0) await autoSaveProducts(validLoadedItems, req.user._id);
+    if (validReturnedItems.length > 0) await autoSaveProducts(validReturnedItems, req.user._id);
+    if (validOnBoardItems.length > 0) await autoSaveProducts(validOnBoardItems, req.user._id);
+
+    const processedLoaded = validLoadedItems.map(item => ({
+        productName: item.productName.trim(),
+        price: Number(item.price || 0),
+        qty: Number(item.qty || 0)
+    }));
+    const loadCost = processedLoaded.reduce((sum, item) => sum + item.qty * item.price, 0);
+
+    const processedReturned = validReturnedItems.map(item => ({
+        productName: item.productName.trim(),
+        price: Number(item.price || 0),
+        qty: Number(item.qty || 0)
+    }));
+    const returnsCost = processedReturned.reduce((sum, item) => sum + item.qty * item.price, 0);
+
+    const processedOnBoard = validOnBoardItems.map(item => ({
+        productName: item.productName.trim(),
+        price: Number(item.price || 0),
+        qty: Number(item.qty || 0)
+    }));
+    const onBoardStockCost = processedOnBoard.reduce((sum, item) => sum + item.qty * item.price, 0);
+
+    const prevOutstanding = Number(previousOutstanding || 0);
+    const prevOnBoard = Number(previousOnBoardStockCost || 0);
+    const prevShops = Number(previousShopsOutstanding || 0);
+    const deposits = Number(bankDeposits || 0);
+    const shopOut = Number(shopsOutstanding || 0);
+    const paid = Number(amountPaid || 0);
+
+    const grossSubtotal = loadCost + prevOutstanding + prevOnBoard + prevShops;
+    const netOutstanding = grossSubtotal - (deposits + returnsCost + onBoardStockCost + shopOut);
+    const nextOutstanding = netOutstanding - paid;
+
+    const billNumber = await generateNuwaraEliyaBillNumber(date);
+
+    const delivery = await NuwaraEliyaDelivery.create({
+        billNumber,
+        date: date ? new Date(date) : new Date(),
+        loadedItems: processedLoaded,
+        loadCost,
+        previousOutstanding: prevOutstanding,
+        previousOnBoardStockCost: prevOnBoard,
+        previousShopsOutstanding: prevShops,
+        bankDeposits: deposits,
+        returnedItems: processedReturned,
+        returnsCost,
+        onBoardItems: processedOnBoard,
+        onBoardStockCost,
+        shopsOutstanding: shopOut,
+        netOutstanding,
+        amountPaid: paid,
+        nextOutstanding,
+        status: status || 'loaded',
+        specialRemarks: specialRemarks || '',
+        structureId: structureId || null,
+        structureName: structureName || '',
+        createdBy: req.user._id
+    });
+
+    res.status(201).json({ success: true, data: delivery });
+});
+
+export const updateNuwaraEliyaDelivery = asyncHandler(async (req, res) => {
+    const {
+        date,
+        loadedItems,
+        previousOutstanding,
+        previousOnBoardStockCost,
+        previousShopsOutstanding,
+        bankDeposits,
+        returnedItems,
+        onBoardItems,
+        shopsOutstanding,
+        amountPaid,
+        specialRemarks,
+        structureId,
+        structureName,
+        status
+    } = req.body;
+
+    const delivery = await NuwaraEliyaDelivery.findById(req.params.id);
+    if (!delivery) {
+        res.status(404);
+        throw new Error('Nuwara Eliya delivery record not found');
+    }
+
+    const validLoadedItems = loadedItems 
+        ? loadedItems.filter(item => item.productName && item.productName.trim() !== '' && Number(item.qty || 0) > 0)
+        : null;
+    const validReturnedItems = returnedItems
+        ? returnedItems.filter(item => item.productName && item.productName.trim() !== '' && Number(item.qty || 0) > 0)
+        : null;
+    const validOnBoardItems = onBoardItems
+        ? onBoardItems.filter(item => item.productName && item.productName.trim() !== '' && Number(item.qty || 0) > 0)
+        : null;
+
+    if (validLoadedItems) await autoSaveProducts(validLoadedItems, req.user._id);
+    if (validReturnedItems) await autoSaveProducts(validReturnedItems, req.user._id);
+    if (validOnBoardItems) await autoSaveProducts(validOnBoardItems, req.user._id);
+
+    const processedLoaded = validLoadedItems 
+        ? validLoadedItems.map(item => ({
+            productName: item.productName.trim(),
+            price: Number(item.price || 0),
+            qty: Number(item.qty || 0)
+          }))
+        : delivery.loadedItems;
+    const loadCost = loadedItems
+        ? processedLoaded.reduce((sum, item) => sum + item.qty * item.price, 0)
+        : delivery.loadCost;
+
+    const processedReturned = validReturnedItems
+        ? validReturnedItems.map(item => ({
+            productName: item.productName.trim(),
+            price: Number(item.price || 0),
+            qty: Number(item.qty || 0)
+          }))
+        : delivery.returnedItems;
+    const returnsCost = returnedItems
+        ? processedReturned.reduce((sum, item) => sum + item.qty * item.price, 0)
+        : delivery.returnsCost;
+
+    const processedOnBoard = validOnBoardItems
+        ? validOnBoardItems.map(item => ({
+            productName: item.productName.trim(),
+            price: Number(item.price || 0),
+            qty: Number(item.qty || 0)
+          }))
+        : delivery.onBoardItems;
+    const onBoardStockCost = onBoardItems
+        ? processedOnBoard.reduce((sum, item) => sum + item.qty * item.price, 0)
+        : delivery.onBoardStockCost;
+
+    const prevOutstanding = previousOutstanding !== undefined ? Number(previousOutstanding) : delivery.previousOutstanding;
+    const prevOnBoard = previousOnBoardStockCost !== undefined ? Number(previousOnBoardStockCost) : delivery.previousOnBoardStockCost;
+    const prevShops = previousShopsOutstanding !== undefined ? Number(previousShopsOutstanding) : delivery.previousShopsOutstanding;
+    const deposits = bankDeposits !== undefined ? Number(bankDeposits) : delivery.bankDeposits;
+    const shopOut = shopsOutstanding !== undefined ? Number(shopsOutstanding) : delivery.shopsOutstanding;
+    const paid = amountPaid !== undefined ? Number(amountPaid) : delivery.amountPaid;
+
+    const grossSubtotal = loadCost + prevOutstanding + prevOnBoard + prevShops;
+    const netOutstanding = grossSubtotal - (deposits + returnsCost + onBoardStockCost + shopOut);
+    const nextOutstanding = netOutstanding - paid;
+
+    delivery.date = date ? new Date(date) : delivery.date;
+    delivery.loadedItems = processedLoaded;
+    delivery.loadCost = loadCost;
+    delivery.previousOutstanding = prevOutstanding;
+    delivery.previousOnBoardStockCost = prevOnBoard;
+    delivery.previousShopsOutstanding = prevShops;
+    delivery.bankDeposits = deposits;
+    delivery.returnedItems = processedReturned;
+    delivery.returnsCost = returnsCost;
+    delivery.onBoardItems = processedOnBoard;
+    delivery.onBoardStockCost = onBoardStockCost;
+    delivery.shopsOutstanding = shopOut;
+    delivery.netOutstanding = netOutstanding;
+    delivery.amountPaid = paid;
+    delivery.nextOutstanding = nextOutstanding;
+    delivery.specialRemarks = specialRemarks !== undefined ? specialRemarks : delivery.specialRemarks;
+    delivery.structureId = structureId !== undefined ? (structureId || null) : delivery.structureId;
+    delivery.structureName = structureName !== undefined ? (structureName || '') : delivery.structureName;
+    delivery.status = status !== undefined ? status : delivery.status;
+
+    await delivery.save();
+    res.json({ success: true, data: delivery });
+});
+
+export const deleteNuwaraEliyaDelivery = asyncHandler(async (req, res) => {
+    const delivery = await NuwaraEliyaDelivery.findById(req.params.id);
+    if (!delivery) {
+        res.status(404);
+        throw new Error('Nuwara Eliya delivery record not found');
+    }
+
+    await delivery.deleteOne();
+    res.json({ success: true, message: 'Nuwara Eliya delivery record removed successfully' });
 });
