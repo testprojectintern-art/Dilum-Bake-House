@@ -4,6 +4,7 @@ import BakeryShop from '../models/BakeryShop.js';
 import BakeryBillingStructure from '../models/BakeryBillingStructure.js';
 import BakeryInvoice from '../models/BakeryInvoice.js';
 import NuwaraEliyaDelivery from '../models/NuwaraEliyaDelivery.js';
+import { sendBakeryInvoiceSms } from '../utils/smsHelper.js';
 
 // Helper: Generate Invoice Number (e.g. DBH-20260708-001)
 const generateInvoiceNumber = async (date) => {
@@ -335,7 +336,8 @@ export const createInvoice = asyncHandler(async (req, res) => {
         oldBalance,
         amountReceived,
         specialNote,
-        contacts
+        contacts,
+        smsRecipients
     } = req.body;
 
     if (!shopName) {
@@ -405,6 +407,13 @@ export const createInvoice = asyncHandler(async (req, res) => {
     // Update shop balance
     await handleShopBalanceOnCreate(shopName, shopPhone, newBalance, oBalance, req.user._id, contacts);
 
+    // Trigger SMS sending asynchronously in the background
+    if (smsRecipients && smsRecipients.length > 0) {
+        sendBakeryInvoiceSms(invoice, smsRecipients).catch(err => {
+            console.error('[SMS TRIGGER ERROR] failed:', err);
+        });
+    }
+
     res.status(201).json({ success: true, data: invoice });
 });
 
@@ -419,7 +428,8 @@ export const updateInvoice = asyncHandler(async (req, res) => {
         oldBalance,
         amountReceived,
         specialNote,
-        contacts
+        contacts,
+        smsRecipients
     } = req.body;
 
     const invoice = await BakeryInvoice.findById(req.params.id);
@@ -499,6 +509,13 @@ export const updateInvoice = asyncHandler(async (req, res) => {
         if (contacts !== undefined) shop.contacts = contacts;
         shop.balance += (newBalance - previousNewBalance);
         await shop.save();
+    }
+
+    // Trigger SMS sending asynchronously in the background
+    if (smsRecipients && smsRecipients.length > 0) {
+        sendBakeryInvoiceSms(invoice, smsRecipients).catch(err => {
+            console.error('[SMS TRIGGER ERROR] failed:', err);
+        });
     }
 
     res.json({ success: true, data: invoice });

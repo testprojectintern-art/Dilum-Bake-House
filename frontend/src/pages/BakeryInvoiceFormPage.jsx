@@ -51,6 +51,8 @@ export default function BakeryInvoiceFormPage() {
     const [showShopSuggestions, setShowShopSuggestions] = useState(false);
     const [activeRowSuggestIndex, setActiveRowSuggestIndex] = useState(null);
     const [selectedShopContacts, setSelectedShopContacts] = useState([]);
+    const [smsRecipients, setSmsRecipients] = useState([]);
+    const [sendToInvoicePhone, setSendToInvoicePhone] = useState(false);
 
     // Global product search bar
     const [productSearch, setProductSearch] = useState('');
@@ -130,6 +132,15 @@ export default function BakeryInvoiceFormPage() {
         };
         fetchShopContacts();
     }, [shopName]);
+
+    // Auto-select all shop contacts by default when they change
+    useEffect(() => {
+        if (selectedShopContacts && selectedShopContacts.length > 0) {
+            setSmsRecipients(selectedShopContacts.map(c => c.phone).filter(Boolean));
+        } else {
+            setSmsRecipients([]);
+        }
+    }, [selectedShopContacts]);
 
     // Handle Shop input and fetch suggestions
     const handleShopNameChange = async (val) => {
@@ -376,6 +387,17 @@ export default function BakeryInvoiceFormPage() {
 
         const structure = dbStructures.find(s => s._id === selectedStructureId);
 
+        // Gather all phone numbers to send SMS to
+        const finalSmsRecipients = [...smsRecipients];
+        if (sendToInvoicePhone && shopPhone) {
+            const extraPhones = shopPhone.split(',').map(p => p.trim()).filter(Boolean);
+            extraPhones.forEach(phone => {
+                if (!finalSmsRecipients.includes(phone)) {
+                    finalSmsRecipients.push(phone);
+                }
+            });
+        }
+
         const data = {
             shopName: shopName.trim(),
             shopPhone: shopPhone.trim(),
@@ -385,7 +407,8 @@ export default function BakeryInvoiceFormPage() {
             items: validItems,
             oldBalance: Number(oldBalance || 0),
             amountReceived: Number(amountReceived || 0),
-            specialNote: specialNote.trim()
+            specialNote: specialNote.trim(),
+            smsRecipients: finalSmsRecipients
         };
 
         if (isEdit) {
@@ -812,8 +835,82 @@ export default function BakeryInvoiceFormPage() {
                         placeholder="Add any special instructions, remarks or notes for this bill..."
                         value={specialNote}
                         onChange={(e) => setSpecialNote(e.target.value)}
-                        className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg px-3 py-2 text-sm font-semibold text-gray-750 focus:outline-none"
+                        className="w-full bg-white border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg px-3 py-2 text-sm font-semibold text-gray-755 focus:outline-none"
                     />
+                </Card>
+
+                {/* SMS Notification Card */}
+                <Card className="p-6 space-y-4">
+                    <h2 className="font-bold text-gray-800 text-base flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-indigo-550" />
+                        Send Real-Time SMS Notification
+                    </h2>
+                    <p className="text-xs text-gray-500 leading-relaxed max-w-2xl">
+                        Select who should receive the automated billing SMS with the invoice details (Morning/Afternoon amount, today total, old/new balance, paid amount). Standard formatting is used to ensure delivery.
+                    </p>
+
+                    {selectedShopContacts.length === 0 ? (
+                        <div className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 p-3.5 rounded-xl flex items-center gap-2">
+                            <AlertTriangle size={15} className="flex-shrink-0" />
+                            <span>No contacts configured for this shop yet. You can add them or use the invoice phone number check below.</span>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                            {selectedShopContacts.map((contact, index) => {
+                                const isChecked = smsRecipients.includes(contact.phone);
+                                return (
+                                    <label
+                                        key={index}
+                                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition duration-150 select-none ${
+                                            isChecked
+                                                ? 'bg-indigo-50/70 border-indigo-300 text-indigo-900 font-semibold shadow-sm'
+                                                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                                            checked={isChecked}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSmsRecipients([...smsRecipients, contact.phone]);
+                                                } else {
+                                                    setSmsRecipients(smsRecipients.filter(phone => phone !== contact.phone));
+                                                }
+                                            }}
+                                        />
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                                {contact.role || 'Contact'}
+                                            </span>
+                                            <span className="text-sm font-bold truncate">
+                                                {contact.name || 'Unnamed'}
+                                            </span>
+                                            <span className="text-xs text-gray-500 font-semibold font-mono">
+                                                {contact.phone}
+                                            </span>
+                                        </div>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {shopPhone && (
+                        <div className="pt-3 border-t border-gray-100 flex items-center">
+                            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                                    checked={sendToInvoicePhone}
+                                    onChange={(e) => setSendToInvoicePhone(e.target.checked)}
+                                />
+                                <span className="text-xs md:text-sm font-semibold text-gray-700">
+                                    Send to Invoice Phone Number(s): <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50/50 px-2 py-0.5 rounded border border-indigo-100/50">{shopPhone}</span>
+                                </span>
+                            </label>
+                        </div>
+                    )}
                 </Card>
 
                 {/* Form Buttons */}
