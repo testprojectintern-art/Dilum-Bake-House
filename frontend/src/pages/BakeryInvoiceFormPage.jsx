@@ -659,7 +659,7 @@ export default function BakeryInvoiceFormPage() {
                     {/* Filter Product List Bar */}
                     <div className="relative mb-4">
                         <div className="relative flex items-center">
-                            <Search className="absolute left-3.5 text-indigo-400 w-4 h-4 pointer-events-none z-10" />
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-indigo-400 w-4 h-4 pointer-events-none z-10" />
                             <input
                                 type="text"
                                 placeholder="Filter products in this bill (type product name)..."

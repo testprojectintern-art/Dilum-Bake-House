@@ -157,8 +157,7 @@ export const sendBakeryInvoiceSms = async (invoice, recipients) => {
         const todayPaidAmount = Number(invoice.amountReceived || 0);
         const newBalance = Number(invoice.newBalance || 0);
 
-        const message = `Dilum Bake House\n` +
-            `Shop: ${invoice.shopName}\n` +
+        const message = `Shop: ${invoice.shopName}\n` +
             `Morning: Rs. ${morningAmount.toFixed(2)}\n` +
             `Afternoon: Rs. ${afternoonAmount.toFixed(2)}\n` +
             `Today Total: Rs. ${todayTotal.toFixed(2)}\n` +
@@ -169,11 +168,17 @@ export const sendBakeryInvoiceSms = async (invoice, recipients) => {
             `Thank you!`;
 
         const results = [];
-        for (const rawPhone of recipients) {
+        for (let i = 0; i < recipients.length; i++) {
+            const rawPhone = recipients[i];
             const phone = normalizePhoneNumber(rawPhone);
             if (!phone) {
                 console.log(`[SMS] Invalid recipient phone: ${rawPhone}`);
                 continue;
+            }
+
+            // Sleep 1 second for consecutive recipients to prevent carrier anti-spam block
+            if (i > 0) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
 
             console.log(`[SMS OUTBOX] Sending to: ${phone}`);

@@ -281,7 +281,7 @@ export default function BakeryStructuresPage() {
                                                     required
                                                     className="pl-8 w-full"
                                                 />
-                                                <Search className="absolute left-2.5 text-gray-400 w-4 h-4 pointer-events-none z-10" />
+                                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
                                                 {activeRowSuggestIndex === idx && matchingProducts.length > 0 && (
                                                     <div className="absolute left-0 right-0 mt-12 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto py-1 animate-in fade-in slide-in-from-top-1 duration-150">
                                                         {matchingProducts.map((prod) => (

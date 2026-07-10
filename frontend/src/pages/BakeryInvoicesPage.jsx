@@ -15,6 +15,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import KpiCard from '../components/ui/KpiCard';
 import { useBakeryInvoices, useUpdateBakeryInvoice, useDeleteBakeryInvoice } from '../features/bakery/useBakery';
+import { bakeryApi } from '../features/bakery/bakeryApi';
 import toast from 'react-hot-toast';
 import html2pdf from 'html2pdf.js';
 
@@ -38,6 +39,9 @@ export default function BakeryInvoicesPage() {
     // Modal state for quick payment update
     const [paymentInvoice, setPaymentInvoice] = useState(null);
     const [quickAmountReceived, setQuickAmountReceived] = useState('');
+    const [selectedShopContacts, setSelectedShopContacts] = useState([]);
+    const [smsRecipients, setSmsRecipients] = useState([]);
+    const [sendToInvoicePhone, setSendToInvoicePhone] = useState(false);
 
     // Modal state for delete confirm
     const [deletingInvoice, setDeletingInvoice] = useState(null);
@@ -96,17 +100,32 @@ export default function BakeryInvoicesPage() {
             return;
         }
 
+        // Gather all phone numbers to send SMS to
+        const finalSmsRecipients = [...smsRecipients];
+        if (sendToInvoicePhone && paymentInvoice.shopPhone) {
+            const extraPhones = paymentInvoice.shopPhone.split(',').map(p => p.trim()).filter(Boolean);
+            extraPhones.forEach(phone => {
+                if (!finalSmsRecipients.includes(phone)) {
+                    finalSmsRecipients.push(phone);
+                }
+            });
+        }
+
         updateInvoice.mutate(
             {
                 id: paymentInvoice._id,
                 data: {
-                    amountReceived: amt
+                    amountReceived: amt,
+                    smsRecipients: finalSmsRecipients
                 }
             },
             {
                 onSuccess: () => {
                     setPaymentInvoice(null);
                     setQuickAmountReceived('');
+                    setSelectedShopContacts([]);
+                    setSmsRecipients([]);
+                    setSendToInvoicePhone(false);
                 }
             }
         );
@@ -122,9 +141,26 @@ export default function BakeryInvoicesPage() {
     };
 
     // Open Quick Payment update modal
-    const handleOpenPaymentModal = (invoice) => {
+    const handleOpenPaymentModal = async (invoice) => {
         setPaymentInvoice(invoice);
         setQuickAmountReceived(String(invoice.amountReceived || 0));
+        setSelectedShopContacts([]);
+        setSmsRecipients([]);
+        setSendToInvoicePhone(false);
+
+        if (invoice && invoice.shopName) {
+            try {
+                const res = await bakeryApi.suggestShops(invoice.shopName);
+                const exactMatch = res?.data?.find(s => s.name.toLowerCase() === invoice.shopName.trim().toLowerCase());
+                if (exactMatch) {
+                    const contacts = exactMatch.contacts || [];
+                    setSelectedShopContacts(contacts);
+                    setSmsRecipients(contacts.map(c => c.phone).filter(Boolean));
+                }
+            } catch (err) {
+                console.error('Error fetching shop contacts for quick payment modal', err);
+            }
+        }
     };
 
     const formatPrice = (price) => {
@@ -1127,6 +1163,72 @@ export default function BakeryInvoicesPage() {
                             </span>
                         </div>
                     )}
+
+                    {/* SMS selection in quick payment modal */}
+                    <div className="space-y-3 border-t pt-3">
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <MessageSquare className="w-3.5 h-3.5 text-indigo-500" />
+                            Send Real-Time SMS Notification
+                        </label>
+
+                        {selectedShopContacts.length === 0 ? (
+                            <div className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded-xl flex items-center gap-2">
+                                <AlertCircle size={14} className="flex-shrink-0" />
+                                <span>No contacts configured for this shop. Use Invoice Phone checklist below.</span>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-2 max-h-36 overflow-y-auto pr-1">
+                                {selectedShopContacts.map((contact, index) => {
+                                    const isChecked = smsRecipients.includes(contact.phone);
+                                    return (
+                                        <label
+                                            key={index}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition select-none ${
+                                                isChecked
+                                                    ? 'bg-indigo-50/50 border-indigo-250 text-indigo-900 font-semibold'
+                                                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+                                                checked={isChecked}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSmsRecipients([...smsRecipients, contact.phone]);
+                                                    } else {
+                                                        setSmsRecipients(smsRecipients.filter(phone => phone !== contact.phone));
+                                                    }
+                                                }}
+                                            />
+                                            <div className="flex justify-between w-full items-center min-w-0">
+                                                <div className="flex flex-col min-w-0">
+                                                    <span className="text-xs font-bold truncate">
+                                                        {contact.name || 'Unnamed'} <span className="text-[10px] text-gray-400 font-normal uppercase">({contact.role || 'Contact'})</span>
+                                                    </span>
+                                                    <span className="text-[10px] text-gray-500 font-mono">{contact.phone}</span>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {paymentInvoice?.shopPhone && (
+                            <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-gray-600 font-semibold">
+                                <input
+                                    type="checkbox"
+                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+                                    checked={sendToInvoicePhone}
+                                    onChange={(e) => setSendToInvoicePhone(e.target.checked)}
+                                />
+                                <span>
+                                    Send to Invoice Phone(s): <span className="font-mono text-indigo-600 bg-indigo-50/50 px-1.5 py-0.5 rounded border border-indigo-100/50">{paymentInvoice.shopPhone}</span>
+                                </span>
+                            </label>
+                        )}
+                    </div>
 
                     <div className="flex justify-end gap-2 pt-4">
                         <Button variant="outline" onClick={() => setPaymentInvoice(null)}>
