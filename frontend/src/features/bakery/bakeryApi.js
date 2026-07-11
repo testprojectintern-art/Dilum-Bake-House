@@ -28,6 +28,10 @@ export const bakeryApi = {
         const response = await api.get('/bakery/shops/suggest', { params: { search } });
         return response.data;
     },
+    deleteShop: async (id) => {
+        const response = await api.delete(`/bakery/shops/${id}`);
+        return response.data;
+    },
 
     // Structures
     getStructures: async () => {
@@ -100,6 +104,28 @@ export const bakeryApi = {
     },
     deleteNuwaraEliyaDelivery: async (id) => {
         const response = await api.delete(`/bakery/nuwara-eliya/${id}`);
+        return response.data;
+    },
+
+    // Finance & Leases
+    getFinanceItems: async (params = {}) => {
+        const response = await api.get('/bakery/finance', { params });
+        return response.data;
+    },
+    createFinanceItem: async (data) => {
+        const response = await api.post('/bakery/finance', data);
+        return response.data;
+    },
+    updateFinanceItem: async (id, data) => {
+        const response = await api.put(`/bakery/finance/${id}`, data);
+        return response.data;
+    },
+    deleteFinanceItem: async (id) => {
+        const response = await api.delete(`/bakery/finance/${id}`);
+        return response.data;
+    },
+    autoAllocateBakeryIncome: async (amount) => {
+        const response = await api.post('/bakery/finance/auto-allocate', { amount });
         return response.data;
     },
 };

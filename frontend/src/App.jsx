@@ -112,6 +112,7 @@ import BakeryShopsPage from './pages/BakeryShopsPage';
 import BakeryStructuresPage from './pages/BakeryStructuresPage';
 import BakeryInvoicesPage from './pages/BakeryInvoicesPage';
 import BakeryInvoiceFormPage from './pages/BakeryInvoiceFormPage';
+import BakeryFinancePage from './pages/BakeryFinancePage';
 
 import NuwaraEliyaDeliveriesPage from './pages/NuwaraEliyaDeliveriesPage';
 import NuwaraEliyaDetailPage from './pages/NuwaraEliyaDetailPage';
@@ -262,6 +263,7 @@ function App() {
         <Route path="/bakery/invoices" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryInvoicesPage /></ProtectedRoute>} />
         <Route path="/bakery/invoices/new" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryInvoiceFormPage /></ProtectedRoute>} />
         <Route path="/bakery/invoices/:id/edit" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryInvoiceFormPage /></ProtectedRoute>} />
+        <Route path="/bakery/finance" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><BakeryFinancePage /></ProtectedRoute>} />
 
         <Route path="/bakery/nuwara-eliya" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><NuwaraEliyaDeliveriesPage /></ProtectedRoute>} />
         <Route path="/bakery/nuwara-eliya/loads" element={<ProtectedRoute allowedRoles={['admin','manager','accountant','cashier','employee']}><NuwaraEliyaLoadsPage /></ProtectedRoute>} />

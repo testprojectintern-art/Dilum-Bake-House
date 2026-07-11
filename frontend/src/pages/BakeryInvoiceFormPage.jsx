@@ -286,7 +286,13 @@ export default function BakeryInvoiceFormPage() {
     const generateSavedInvoicePdf = async (invoice) => {
         const element = document.createElement('div');
         element.id = 'pdf-tmp';
-        element.style.cssText = 'padding:10px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.4;width:198mm;background-color:#ffffff;color:#1e293b;box-sizing:border-box;';
+        element.style.padding = '15px';
+        element.style.fontFamily = '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        element.style.lineHeight = '1.5';
+        element.style.width = '198mm';
+        element.style.backgroundColor = '#ffffff';
+        element.style.color = '#1e293b';
+        element.style.boxSizing = 'border-box';
 
         const morningItems = invoice.items.filter(i => i.morningQty > 0);
         const afternoonItems = invoice.items.filter(i => i.afternoonQty > 0);
@@ -298,40 +304,134 @@ export default function BakeryInvoiceFormPage() {
             returnsTotal += (i.returnQty || 0) * (i.price || 0);
         });
 
-        const tRow = (label, qty, price) => `<tr><td style="font-weight:600;padding:7px 10px;border-bottom:1px solid #f1f5f9;">${label}</td><td style="text-align:right;padding:7px 10px;border-bottom:1px solid #f1f5f9;">${qty}</td><td style="text-align:right;padding:7px 10px;border-bottom:1px solid #f1f5f9;">${price.toFixed(2)}</td><td style="text-align:right;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-weight:700;color:#1e3a8a;">${(qty * price).toFixed(2)}</td></tr>`;
-        const thead = `<thead><tr><th style="text-align:left;background:#f1f5f9;padding:7px 10px;font-size:11px;text-transform:uppercase;border-bottom:2px solid #cbd5e1;">Product</th><th style="text-align:right;background:#f1f5f9;padding:7px 10px;font-size:11px;text-transform:uppercase;border-bottom:2px solid #cbd5e1;">Qty</th><th style="text-align:right;background:#f1f5f9;padding:7px 10px;font-size:11px;text-transform:uppercase;border-bottom:2px solid #cbd5e1;">Price</th><th style="text-align:right;background:#f1f5f9;padding:7px 10px;font-size:11px;text-transform:uppercase;border-bottom:2px solid #cbd5e1;">Total LKR</th></tr></thead>`;
-        const section = (title, color, items, getQty) => items.length === 0 ? '' : `<div style="font-size:12px;font-weight:900;text-transform:uppercase;color:${color};border-bottom:2px solid ${color};padding-bottom:4px;margin:20px 0 8px 0;">${title}</div><table style="width:100%;border-collapse:collapse;">${thead}<tbody>${items.map(i => tRow(i.productName, getQty(i), i.price)).join('')}</tbody></table>`;
+        const tRow = (label, qty, price, isReturn) => `<tr><td style="font-weight:600;padding:10px 14px;border-bottom:1px solid #f1f5f9;color:#0f172a;">${label}</td><td style="text-align:right;font-weight:600;padding:10px 14px;border-bottom:1px solid #f1f5f9;color:${isReturn ? '#b91c1c' : '#1e3a8a'};">${qty}</td><td style="text-align:right;padding:10px 14px;border-bottom:1px solid #f1f5f9;">${price.toFixed(2)}</td><td style="text-align:right;padding:10px 14px;border-bottom:1px solid #f1f5f9;font-weight:700;color:${isReturn ? '#b91c1c' : '#0f172a'};">${(isReturn ? '-' : '')}${(qty * price).toFixed(2)} LKR</td></tr>`;
+        
+        const thead = `<thead><tr><th style="text-align:left;background:#f8fafc;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Product</th><th style="text-align:right;background:#f8fafc;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Qty</th><th style="text-align:right;background:#f8fafc;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Price</th><th style="text-align:right;background:#f8fafc;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;">Total Amount</th></tr></thead>`;
+        
+        const section = (title, color, items, getQty, isReturn, subtotalVal) => items.length === 0 ? '' : `
+            <div style="font-size:13px;font-weight:800;text-transform:uppercase;color:${color};border-left:3.5px solid ${color};padding-left:10px;margin:30px 0 12px 0;letter-spacing:0.5px;">${title}</div>
+            <table style="width:100%;border-collapse:collapse;margin-bottom:20px;box-shadow: 0 1px 3px 0 rgba(0,0,0,0.02);">${thead}<tbody>
+                ${items.map(i => tRow(i.productName, getQty(i), i.price, isReturn)).join('')}
+                <tr style="background-color:${isReturn ? '#fef2f2' : '#f8fafc'};">
+                    <td colspan="3" style="text-align:right;font-weight:800;border-top:1.5px solid ${isReturn ? '#fca5a5' : '#cbd5e1'}!important;padding:10px 14px!important;color:${isReturn ? '#b91c1c' : '#475569'};font-size:11px;">${title.toUpperCase()} TOTAL:</td>
+                    <td style="text-align:right;font-weight:800;color:${color};border-top:1.5px solid ${isReturn ? '#fca5a5' : '#cbd5e1'}!important;padding:10px 14px!important;font-size:13px;">${(isReturn ? '-' : '')}${subtotalVal.toFixed(2)} LKR</td>
+                </tr>
+            </tbody></table>`;
+
+        let specialNoteHtml = '';
+        if (invoice.specialNote && invoice.specialNote.trim() !== '') {
+            specialNoteHtml = `
+                <div style="border-left: 4px solid #1e3a8a; background-color: #f8fafc; padding: 15px; border-radius: 0 8px 8px 0; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-top: 10px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.02);">
+                    <strong style="text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 6px; letter-spacing: 0.5px; color: #1e3a8a;">Special Note / Remarks</strong>
+                    <span style="font-size: 12px; color: #475569; line-height: 1.5; display: block; font-style: italic;">"${invoice.specialNote}"</span>
+                </div>
+            `;
+        }
 
         element.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1e3a8a;padding-bottom:12px;margin-bottom:18px;">
-            <div><h1 style="font-size:24px;font-weight:900;color:#1e3a8a;margin:0 0 4px 0;">DILUM BAKE HOUSE</h1><p style="font-size:10px;color:#64748b;margin:0 0 2px 0;">39/A, Muruthalawa road, Dehideniya, Peradeniya</p><p style="font-size:10px;color:#64748b;margin:0;">Tel: 0762125472 / 0774334046</p></div>
-            <div style="text-align:right;"><h2 style="font-size:22px;font-weight:900;color:#1e3a8a;margin:0 0 6px 0;">INVOICE</h2><div style="font-size:11px;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px;min-width:200px;display:inline-block;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#64748b;">Invoice No:</span><span style="font-weight:700;color:#1e3a8a;">${invoice.invoiceNumber}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="color:#64748b;">Date:</span><span style="font-weight:700;">${new Date(invoice.date).toLocaleDateString()}</span></div><div style="display:flex;justify-content:space-between;"><span style="color:#64748b;">Status:</span><span style="font-weight:700;color:${invoice.newBalance <= 0 ? '#16a34a' : '#dc2626'}">${invoice.newBalance <= 0 ? 'Paid' : 'Unpaid'}</span></div></div></div>
-          </div>
-          <div style="margin-bottom:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;"><h3 style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;margin:0 0 5px 0;">Billed To</h3><div style="font-size:14px;font-weight:800;color:#1e293b;text-transform:uppercase;">${invoice.shopName}</div>${invoice.shopPhone ? `<div style="font-size:11px;color:#475569;margin-top:3px;">Phone: <strong>${invoice.shopPhone}</strong></div>` : ''}</div>
-          ${section('Morning Deliveries', '#1e3a8a', morningItems, i => i.morningQty)}
-          ${section('Afternoon Deliveries', '#1e3a8a', afternoonItems, i => i.afternoonQty)}
-          ${section('Returns Received', '#b91c1c', returnItems, i => i.returnQty)}
-          <div style="display:flex;gap:20px;justify-content:flex-end;margin-top:22px;">
-            <div style="width:300px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;font-size:13px;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:5px;color:#475569;"><span>Morning:</span><span style="font-weight:600;">${morningTotal.toFixed(2)} LKR</span></div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:5px;color:#475569;"><span>Afternoon:</span><span style="font-weight:600;">${afternoonTotal.toFixed(2)} LKR</span></div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-weight:800;background:#eff6ff;border-radius:5px;padding:5px 9px;color:#1e3a8a;"><span>Today Total (Delivered):</span><span>${(morningTotal+afternoonTotal).toFixed(2)} LKR</span></div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:5px;color:#475569;"><span>Less Returns:</span><span style="font-weight:600;color:#dc2626;">-${returnsTotal.toFixed(2)} LKR</span></div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:7px;color:#475569;border-bottom:1px dashed #cbd5e1;padding-bottom:5px;"><span>Old Outstanding:</span><span style="font-weight:600;">${(invoice.oldBalance||0).toFixed(2)} LKR</span></div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-weight:800;font-size:14px;"><span>Grand Total:</span><span style="color:#1e3a8a;">${(invoice.grandTotal||0).toFixed(2)} LKR</span></div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-weight:800;font-size:14px;border-bottom:1px dashed #cbd5e1;padding-bottom:5px;"><span>Amount Paid Today:</span><span style="color:#16a34a;">-${(invoice.amountReceived||0).toFixed(2)} LKR</span></div>
-              <div style="display:flex;justify-content:space-between;font-weight:950;font-size:15px;"><span>Net Outstanding:</span><span style="color:#dc2626;">${(invoice.newBalance||0).toFixed(2)} LKR</span></div>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+                #pdf-tmp {
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+                }
+            </style>
+            <div style="background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #ffffff; padding: 25px 30px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <div>
+                    <h1 style="font-size: 28px; font-weight: 900; margin: 0 0 4px 0; letter-spacing: 1px;">DILUM BAKE HOUSE</h1>
+                    <p style="font-size: 11px; color: #93c5fd; margin: 0 0 2px 0; font-weight: 500; opacity: 0.95;">39/A, Muruthalawa road, Dehideniya, Peradeniya</p>
+                    <p style="font-size: 11px; color: #93c5fd; margin: 0 0 2px 0; font-weight: 500; opacity: 0.95;">Tel: 0762125472 / 0774334046</p>
+                    <p style="font-size: 10px; color: #ffffff; margin: 6px 0 0 0; font-weight: 700; background-color: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 6px; display: inline-block;">Reg No: මපස/ප්‍රාලේ/යනු/2978</p>
+                </div>
+                <div style="text-align: right;">
+                    <h2 style="font-size: 26px; font-weight: 900; margin: 0 0 8px 0; letter-spacing: 1.5px; color: #ffffff;">INVOICE</h2>
+                    <div style="font-size: 11px; background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 10px; border-radius: 8px; text-align: left; min-width: 200px; display: inline-block; backdrop-filter: blur(4px);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px; gap: 20px;">
+                            <span style="color: #93c5fd;">Invoice No:</span>
+                            <span style="font-weight: 700; color: #ffffff;">${invoice.invoiceNumber}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px; gap: 20px;">
+                            <span style="color: #93c5fd;">Date:</span>
+                            <span style="font-weight: 700; color: #ffffff;">${new Date(invoice.date).toLocaleDateString()}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; gap: 20px;">
+                            <span style="color: #93c5fd;">Status:</span>
+                            <span style="font-weight: 800; color: ${invoice.newBalance <= 0 ? '#4ade80' : '#f87171'}; text-transform: uppercase;">${invoice.newBalance <= 0 ? 'Paid' : 'Unpaid'}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div style="text-align:center;font-size:9px;margin-top:36px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px;font-style:italic;">Delight in every bite! Thank you for your continued partnership with Dilum Bake House.</div>
+            
+            <div style="margin-bottom: 25px; border-left: 4px solid #1e3a8a; background-color: #f8fafc; border-radius: 0 8px 8px 0; padding: 15px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.02);">
+                <h3 style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;">Billed To (Customer Details)</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
+                    <div>
+                        <div style="font-size: 16px; font-weight: 800; color: #0f172a; text-transform: uppercase;">${invoice.shopName}</div>
+                        ${invoice.shopPhone ? `
+                        <div style="font-size: 12px; color: #475569; margin-top: 4px;">
+                            <span>Phone:</span> <span style="font-weight: 700; color: #1e3a8a;">${invoice.shopPhone}</span>
+                        </div>` : ''}
+                    </div>
+                    <div style="text-align: right; font-size: 11px; color: #64748b; max-width: 250px; font-style: italic;">
+                        Outstanding balance carries forward to the next billing cycle.
+                    </div>
+                </div>
+            </div>
+
+            ${section('Morning Deliveries', '#1e3a8a', morningItems, i => i.morningQty, false, morningTotal)}
+            ${section('Afternoon Deliveries', '#1e3a8a', afternoonItems, i => i.afternoonQty, false, afternoonTotal)}
+            ${section('Returns Received', '#b91c1c', returnItems, i => i.returnQty, true, returnsTotal)}
+
+            <div style="display: flex; gap: 25px; justify-content: space-between; margin-top: 30px; align-items: flex-start; page-break-inside: avoid;">
+                <!-- Left: Special Notes -->
+                <div style="flex: 1; min-width: 250px;">
+                    ${specialNoteHtml}
+                </div>
+
+                <!-- Right: Calculation Box -->
+                <div style="width: 340px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; font-size: 12px; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.02);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #475569;">
+                        <span>Morning Total:</span>
+                        <span style="font-weight: 600; color: #1e293b;">${morningTotal.toFixed(2)} LKR</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #475569;">
+                        <span>Afternoon Total:</span>
+                        <span style="font-weight: 600; color: #1e293b;">${afternoonTotal.toFixed(2)} LKR</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: 800; background-color: #eff6ff; border-radius: 6px; padding: 6px 10px; color: #1e3a8a;">
+                        <span>Today Total (Delivered):</span>
+                        <span>${(morningTotal + afternoonTotal).toFixed(2)} LKR</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #475569;">
+                        <span>Returns Total:</span>
+                        <span style="font-weight: 600; color: #dc2626;">-${returnsTotal.toFixed(2)} LKR</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #475569; border-bottom: 1px dashed #cbd5e1; padding-bottom: 6px;">
+                        <span>Old Outstanding:</span>
+                        <span style="font-weight: 600; color: #1e293b;">${(invoice.oldBalance || 0).toFixed(2)} LKR</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: 800; font-size: 14px;">
+                        <span>Grand Total:</span>
+                        <span style="color:#1e3a8a; font-weight: 700;">${(invoice.grandTotal || 0).toFixed(2)} LKR</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 800; font-size: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 6px;">
+                        <span>Amount Paid Today:</span>
+                        <span style="color:#16a34a; font-weight: 700;">-${(invoice.amountReceived || 0).toFixed(2)} LKR</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-weight: 950; font-size: 16px; padding: 6px 10px; background-color: #fef2f2; border-radius: 6px; color: #dc2626;">
+                        <span>Net Outstanding:</span>
+                        <span>${(invoice.newBalance || 0).toFixed(2)} LKR</span>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; font-size: 10px; margin-top: 50px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 15px; font-style: italic; letter-spacing: 0.5px;">Delight in every bite! Thank you for your continued partnership with Dilum Bake House.</div>
         `;
         document.body.appendChild(element);
-        const opts = { margin:6, filename:`${invoice.invoiceNumber}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:1.5,useCORS:true,logging:false}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} };
+        const opts = { margin: 6, filename: `${invoice.invoiceNumber}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 1.5, useCORS: true, logging: false }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
         try {
             const blob = await html2pdf().from(element).set(opts).output('blob');
             document.body.removeChild(element);
             return blob;
-        } catch(e) { document.body.removeChild(element); throw e; }
+        } catch (e) { document.body.removeChild(element); throw e; }
     };
 
     const handleDownloadSavedPdf = async () => {
@@ -356,7 +456,7 @@ export default function BakeryInvoiceFormPage() {
             const blob = await generateSavedInvoicePdf(savedInvoice);
             const file = new File([blob], `${savedInvoice.invoiceNumber}.pdf`, { type: 'application/pdf' });
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file], title: `Invoice #${savedInvoice.invoiceNumber}`, text: `Dilum Bake House - ${savedInvoice.shopName}` });
+                await navigator.share({ files: [file] });
             } else {
                 // Fallback: download
                 const url = URL.createObjectURL(blob);
@@ -364,7 +464,7 @@ export default function BakeryInvoiceFormPage() {
                 a.href = url; a.download = `${savedInvoice.invoiceNumber}.pdf`;
                 document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                toast('Sharing not supported — PDF downloaded instead.');
+                toast.info('PDF downloaded! You can now drag and drop this file into your WhatsApp chat.');
             }
         } catch(e) { if (e.name !== 'AbortError') toast.error('Share failed.'); }
         finally { setIsDownloadingPdf(false); }

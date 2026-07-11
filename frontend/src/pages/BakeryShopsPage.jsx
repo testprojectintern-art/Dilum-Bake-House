@@ -7,12 +7,14 @@ import Input from '../components/ui/Input';
 import Table from '../components/ui/Table';
 import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
-import { useBakeryShops, useCreateBakeryShop } from '../features/bakery/useBakery';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { useBakeryShops, useCreateBakeryShop, useDeleteBakeryShop } from '../features/bakery/useBakery';
 
 export default function BakeryShopsPage() {
     const [search, setSearch] = useState('');
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingShop, setEditingShop] = useState(null);
+    const [deletingShop, setDeletingShop] = useState(null);
 
     const [shopName, setShopName] = useState('');
     const [shopPhone, setShopPhone] = useState('');
@@ -21,6 +23,7 @@ export default function BakeryShopsPage() {
 
     const { data, isLoading } = useBakeryShops(search);
     const saveShop = useCreateBakeryShop();
+    const deleteShopMutation = useDeleteBakeryShop();
 
     const shops = data?.data || [];
 
@@ -76,6 +79,15 @@ export default function BakeryShopsPage() {
                 },
             }
         );
+    };
+
+    const handleConfirmDelete = () => {
+        if (!deletingShop) return;
+        deleteShopMutation.mutate(deletingShop._id, {
+            onSuccess: () => {
+                setDeletingShop(null);
+            },
+        });
     };
 
     const formatPrice = (price) => {
@@ -139,9 +151,9 @@ export default function BakeryShopsPage() {
         {
             key: 'actions',
             label: 'Actions',
-            width: '100px',
+            width: '120px',
             render: (row) => (
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-1.5">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -151,6 +163,16 @@ export default function BakeryShopsPage() {
                         title="Edit Shop Details"
                     >
                         <Edit size={16} />
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingShop(row);
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition"
+                        title="Delete Shop"
+                    >
+                        <Trash2 size={16} />
                     </button>
                 </div>
             ),
@@ -295,6 +317,17 @@ export default function BakeryShopsPage() {
                     </div>
                 </form>
             </Modal>
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={!!deletingShop}
+                onClose={() => setDeletingShop(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Shop"
+                message={`Are you sure you want to delete shop "${deletingShop?.name}"? This will permanently remove the shop and its outstanding balance information from the database.`}
+                confirmText="Delete"
+                loading={deleteShopMutation.isPending}
+            />
         </div>
     );
 }

@@ -180,9 +180,9 @@ export default function BakeryInvoicesPage() {
 
         const element = document.createElement('div');
         element.id = 'pdf-temp-container';
-        element.style.padding = '10px';
-        element.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-        element.style.lineHeight = '1.4';
+        element.style.padding = '15px';
+        element.style.fontFamily = '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        element.style.lineHeight = '1.5';
         element.style.width = '198mm'; // 210mm total - 12mm margins (6mm left/right)
         element.style.backgroundColor = '#ffffff';
         element.style.color = '#1e293b';
@@ -206,7 +206,7 @@ export default function BakeryInvoicesPage() {
         if (morningItems.length > 0) {
             itemsHtml += `
                 <div class="section-title">Morning Deliveries</div>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.02);">
                     <thead>
                         <tr>
                             <th style="text-align: left; width: 45%;">Product Name</th>
@@ -218,15 +218,15 @@ export default function BakeryInvoicesPage() {
                     <tbody>
                         ${morningItems.map(item => `
                             <tr>
-                                <td style="font-weight: 600; text-align: left;">${item.productName}</td>
-                                <td style="text-align: right; font-weight: 500;">${item.morningQty}</td>
+                                <td style="font-weight: 600; text-align: left; color: #0f172a;">${item.productName}</td>
+                                <td style="text-align: right; font-weight: 600; color: #1e3a8a;">${item.morningQty}</td>
                                 <td style="text-align: right;">${item.price.toFixed(2)}</td>
-                                <td style="text-align: right; font-weight: 700; color: #1e3a8a;">${(item.morningQty * item.price).toFixed(2)}</td>
+                                <td style="text-align: right; font-weight: 700; color: #0f172a;">${(item.morningQty * item.price).toFixed(2)}</td>
                             </tr>
                         `).join('')}
-                        <tr>
-                            <td colspan="3" style="text-align: right; font-weight: 800; border-top: 2px solid #cbd5e1 !important; padding: 10px 12px !important;">Morning Deliveries Total:</td>
-                            <td style="text-align: right; font-weight: 800; color: #1e3a8a; border-top: 2px solid #cbd5e1 !important; padding: 10px 12px !important;">${morningTotal.toFixed(2)} LKR</td>
+                        <tr style="background-color: #f8fafc;">
+                            <td colspan="3" style="text-align: right; font-weight: 800; border-top: 1.5px solid #cbd5e1 !important; padding: 10px 14px !important; color: #475569; font-size: 11px;">MORNING DELIVERIES TOTAL:</td>
+                            <td style="text-align: right; font-weight: 800; color: #1e3a8a; border-top: 1.5px solid #cbd5e1 !important; padding: 10px 14px !important; font-size: 13px;">${morningTotal.toFixed(2)} LKR</td>
                         </tr>
                     </tbody>
                 </table>
@@ -236,7 +236,7 @@ export default function BakeryInvoicesPage() {
         if (afternoonItems.length > 0) {
             itemsHtml += `
                 <div class="section-title">Afternoon Deliveries</div>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.02);">
                     <thead>
                         <tr>
                             <th style="text-align: left; width: 45%;">Product Name</th>
@@ -248,15 +248,15 @@ export default function BakeryInvoicesPage() {
                     <tbody>
                         ${afternoonItems.map(item => `
                             <tr>
-                                <td style="font-weight: 600; text-align: left;">${item.productName}</td>
-                                <td style="text-align: right; font-weight: 500;">${item.afternoonQty}</td>
+                                <td style="font-weight: 600; text-align: left; color: #0f172a;">${item.productName}</td>
+                                <td style="text-align: right; font-weight: 600; color: #1e3a8a;">${item.afternoonQty}</td>
                                 <td style="text-align: right;">${item.price.toFixed(2)}</td>
-                                <td style="text-align: right; font-weight: 700; color: #1e3a8a;">${(item.afternoonQty * item.price).toFixed(2)}</td>
+                                <td style="text-align: right; font-weight: 700; color: #0f172a;">${(item.afternoonQty * item.price).toFixed(2)}</td>
                             </tr>
                         `).join('')}
-                        <tr>
-                            <td colspan="3" style="text-align: right; font-weight: 800; border-top: 2px solid #cbd5e1 !important; padding: 10px 12px !important;">Afternoon Deliveries Total:</td>
-                            <td style="text-align: right; font-weight: 800; color: #1e3a8a; border-top: 2px solid #cbd5e1 !important; padding: 10px 12px !important;">${afternoonTotal.toFixed(2)} LKR</td>
+                        <tr style="background-color: #f8fafc;">
+                            <td colspan="3" style="text-align: right; font-weight: 800; border-top: 1.5px solid #cbd5e1 !important; padding: 10px 14px !important; color: #475569; font-size: 11px;">AFTERNOON DELIVERIES TOTAL:</td>
+                            <td style="text-align: right; font-weight: 800; color: #1e3a8a; border-top: 1.5px solid #cbd5e1 !important; padding: 10px 14px !important; font-size: 13px;">${afternoonTotal.toFixed(2)} LKR</td>
                         </tr>
                     </tbody>
                 </table>
@@ -265,8 +265,8 @@ export default function BakeryInvoicesPage() {
 
         if (returnItems.length > 0) {
             itemsHtml += `
-                <div class="section-title" style="color: #b91c1c; border-bottom-color: #b91c1c;">Returns Received</div>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                <div class="section-title" style="color: #b91c1c; border-left-color: #b91c1c;">Returns Received</div>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.02);">
                     <thead>
                         <tr>
                             <th style="text-align: left; width: 45%;">Product Name</th>
@@ -278,15 +278,15 @@ export default function BakeryInvoicesPage() {
                     <tbody>
                         ${returnItems.map(item => `
                             <tr>
-                                <td style="font-weight: 600; text-align: left;">${item.productName}</td>
-                                <td style="text-align: right; font-weight: 500;">${item.returnQty}</td>
+                                <td style="font-weight: 600; text-align: left; color: #0f172a;">${item.productName}</td>
+                                <td style="text-align: right; font-weight: 600; color: #b91c1c;">${item.returnQty}</td>
                                 <td style="text-align: right;">${item.price.toFixed(2)}</td>
                                 <td style="text-align: right; font-weight: 700; color: #b91c1c;">-${(item.returnQty * item.price).toFixed(2)}</td>
                             </tr>
                         `).join('')}
-                        <tr>
-                            <td colspan="3" style="text-align: right; font-weight: 800; border-top: 2px solid #cbd5e1 !important; padding: 10px 12px !important;">Returns Total:</td>
-                            <td style="text-align: right; font-weight: 800; color: #b91c1c; border-top: 2px solid #cbd5e1 !important; padding: 10px 12px !important;">-${returnsTotal.toFixed(2)} LKR</td>
+                        <tr style="background-color: #fef2f2;">
+                            <td colspan="3" style="text-align: right; font-weight: 800; border-top: 1.5px solid #fca5a5 !important; padding: 10px 14px !important; color: #b91c1c; font-size: 11px;">RETURNS TOTAL:</td>
+                            <td style="text-align: right; font-weight: 800; color: #b91c1c; border-top: 1.5px solid #fca5a5 !important; padding: 10px 14px !important; font-size: 13px;">-${returnsTotal.toFixed(2)} LKR</td>
                         </tr>
                     </tbody>
                 </table>
@@ -296,98 +296,102 @@ export default function BakeryInvoicesPage() {
         let specialNoteHtml = '';
         if (invoice.specialNote && invoice.specialNote.trim() !== '') {
             specialNoteHtml = `
-                <div style="border-left: 4px solid #1e3a8a; background-color: #f8fafc; padding: 12px 15px; border-radius: 0 8px 8px 0; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-top: 10px;">
-                    <strong class="text-primary" style="text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 4px; letter-spacing: 0.5px;">Special Note / Remarks</strong>
-                    <span style="font-size: 12px; color: #475569; line-height: 1.4; display: block;">${invoice.specialNote}</span>
+                <div style="border-left: 4px solid #1e3a8a; background-color: #f8fafc; padding: 15px; border-radius: 0 8px 8px 0; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-top: 10px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.02);">
+                    <strong class="text-primary" style="text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 6px; letter-spacing: 0.5px; color: #1e3a8a;">Special Note / Remarks</strong>
+                    <span style="font-size: 12px; color: #475569; line-height: 1.5; display: block; font-style: italic;">"${invoice.specialNote}"</span>
                 </div>
             `;
         }
 
         element.innerHTML = `
             <style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
                 #pdf-temp-container {
                     background-color: #ffffff !important;
                     color: #1e293b !important;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
                 }
                 #pdf-temp-container * {
                     box-sizing: border-box !important;
                 }
                 #pdf-temp-container th {
-                    background-color: #f1f5f9 !important;
+                    background-color: #f8fafc !important;
                     color: #475569 !important;
                     font-weight: 700 !important;
-                    font-size: 12px !important;
+                    font-size: 11px !important;
                     text-transform: uppercase !important;
-                    padding: 8px 12px !important;
-                    border-bottom: 2px solid #cbd5e1 !important;
+                    letter-spacing: 0.5px !important;
+                    padding: 10px 14px !important;
+                    border-bottom: 2px solid #e2e8f0 !important;
                 }
                 #pdf-temp-container td {
-                    padding: 8px 12px !important;
-                    font-size: 13px !important;
-                    border-bottom: 1px solid #e2e8f0 !important;
-                    color: #1e293b !important;
+                    padding: 10px 14px !important;
+                    font-size: 12px !important;
+                    border-bottom: 1px solid #f1f5f9 !important;
+                    color: #334155 !important;
                 }
                 #pdf-temp-container .section-title {
                     font-size: 13px !important;
-                    font-weight: 850 !important;
+                    font-weight: 800 !important;
                     text-transform: uppercase !important;
                     color: #1e3a8a !important;
-                    border-bottom: 2px solid #1e3a8a !important;
-                    padding-bottom: 4px !important;
-                    margin-top: 25px !important;
-                    margin-bottom: 10px !important;
+                    border-left: 3.5px solid #1e3a8a !important;
+                    padding-left: 10px !important;
+                    margin-top: 30px !important;
+                    margin-bottom: 12px !important;
+                    letter-spacing: 0.5px !important;
                 }
                 #pdf-temp-container .text-primary {
                     color: #1e3a8a !important;
-                    font-weight: 750 !important;
+                    font-weight: 700 !important;
                 }
                 #pdf-temp-container .text-success {
                     color: #16a34a !important;
-                    font-weight: 750 !important;
+                    font-weight: 700 !important;
                 }
                 #pdf-temp-container .text-danger {
                     color: #dc2626 !important;
-                    font-weight: 750 !important;
+                    font-weight: 700 !important;
                 }
             </style>
 
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px;">
+            <div style="background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #ffffff; padding: 25px 30px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                 <div>
-                    <h1 style="font-size: 26px; font-weight: 900; color: #1e3a8a; margin: 0 0 4px 0; letter-spacing: 0.5px;">DILUM BAKE HOUSE</h1>
-                    <p style="font-size: 11px; color: #64748b; margin: 0 0 2px 0; font-weight: 500;">39/A, Muruthalawa road, Dehideniya, Peradeniya</p>
-                    <p style="font-size: 11px; color: #64748b; margin: 0 0 2px 0; font-weight: 500;">Tel: 0762125472 / 0774334046</p>
-                    <p style="font-size: 10px; color: #475569; margin: 4px 0 0 0; font-weight: 700; background-color: #f1f5f9; padding: 3px 8px; border-radius: 4px; display: inline-block;">Reg No: මපස/ප්‍රාලේ/යනු/2978</p>
+                    <h1 style="font-size: 28px; font-weight: 900; margin: 0 0 4px 0; letter-spacing: 1px;">DILUM BAKE HOUSE</h1>
+                    <p style="font-size: 11px; color: #93c5fd; margin: 0 0 2px 0; font-weight: 500; opacity: 0.95;">39/A, Muruthalawa road, Dehideniya, Peradeniya</p>
+                    <p style="font-size: 11px; color: #93c5fd; margin: 0 0 2px 0; font-weight: 500; opacity: 0.95;">Tel: 0762125472 / 0774334046</p>
+                    <p style="font-size: 10px; color: #ffffff; margin: 6px 0 0 0; font-weight: 700; background-color: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 6px; display: inline-block;">Reg No: මපස/ප්‍රාලේ/යනු/2978</p>
                 </div>
                 <div style="text-align: right;">
-                    <h2 style="font-size: 24px; font-weight: 900; color: #1e3a8a; margin: 0 0 8px 0; letter-spacing: 1px;">INVOICE</h2>
-                    <div style="font-size: 11px; color: #1e293b; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; text-align: left; min-width: 220px; display: inline-block;">
+                    <h2 style="font-size: 26px; font-weight: 900; margin: 0 0 8px 0; letter-spacing: 1.5px; color: #ffffff;">INVOICE</h2>
+                    <div style="font-size: 11px; background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 10px; border-radius: 8px; text-align: left; min-width: 200px; display: inline-block; backdrop-filter: blur(4px);">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 4px; gap: 20px;">
-                            <span style="color: #64748b;">Invoice No:</span>
-                            <span style="font-weight: 700; color: #1e3a8a;">${invoice.invoiceNumber}</span>
+                            <span style="color: #93c5fd;">Invoice No:</span>
+                            <span style="font-weight: 700; color: #ffffff;">${invoice.invoiceNumber}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 4px; gap: 20px;">
-                            <span style="color: #64748b;">Date:</span>
-                            <span style="font-weight: 700;">${new Date(invoice.date).toLocaleDateString()}</span>
+                            <span style="color: #93c5fd;">Date:</span>
+                            <span style="font-weight: 700; color: #ffffff;">${new Date(invoice.date).toLocaleDateString()}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; gap: 20px;">
-                            <span style="color: #64748b;">Status:</span>
-                            <span style="font-weight: 700; color: ${invoice.newBalance <= 0 ? '#16a34a' : '#dc2626'}; text-transform: uppercase;">${invoice.newBalance <= 0 ? 'Paid' : 'Unpaid'}</span>
+                            <span style="color: #93c5fd;">Status:</span>
+                            <span style="font-weight: 800; color: ${invoice.newBalance <= 0 ? '#4ade80' : '#f87171'}; text-transform: uppercase;">${invoice.newBalance <= 0 ? 'Paid' : 'Unpaid'}</span>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div style="margin-bottom: 25px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+            <div style="margin-bottom: 25px; border-left: 4px solid #1e3a8a; background-color: #f8fafc; border-radius: 0 8px 8px 0; padding: 15px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.02);">
                 <h3 style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;">Billed To (Customer Details)</h3>
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
                     <div>
-                        <div style="font-size: 15px; font-weight: 800; color: #1e293b; text-transform: uppercase;">${invoice.shopName}</div>
+                        <div style="font-size: 16px; font-weight: 800; color: #0f172a; text-transform: uppercase;">${invoice.shopName}</div>
                         ${invoice.shopPhone ? `
                         <div style="font-size: 12px; color: #475569; margin-top: 4px;">
-                            <span>Phone:</span> <span style="font-weight: 600;">${invoice.shopPhone}</span>
+                            <span>Phone:</span> <span style="font-weight: 700; color: #1e3a8a;">${invoice.shopPhone}</span>
                         </div>` : ''}
                     </div>
-                    <div style="text-align: right; font-size: 11px; color: #64748b; max-width: 250px;">
+                    <div style="text-align: right; font-size: 11px; color: #64748b; max-width: 250px; font-style: italic;">
                         Outstanding balance carries forward to the next billing cycle.
                     </div>
                 </div>
@@ -395,14 +399,14 @@ export default function BakeryInvoicesPage() {
 
             ${itemsHtml}
 
-            <div style="display: flex; gap: 20px; justify-content: space-between; margin-top: 25px; align-items: flex-start;">
+            <div style="display: flex; gap: 25px; justify-content: space-between; margin-top: 30px; align-items: flex-start; page-break-inside: avoid;">
                 <!-- Left: Special Notes -->
                 <div style="flex: 1; min-width: 250px;">
                     ${specialNoteHtml}
                 </div>
 
                 <!-- Right: Calculation Box -->
-                <div style="width: 320px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; font-size: 13px;">
+                <div style="width: 340px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; font-size: 12px; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.02);">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #475569;">
                         <span>Morning Total:</span>
                         <span style="font-weight: 600; color: #1e293b;">${morningTotal.toFixed(2)} LKR</span>
@@ -431,14 +435,14 @@ export default function BakeryInvoicesPage() {
                         <span>Amount Paid Today:</span>
                         <span class="text-success">-${invoice.amountReceived.toFixed(2)} LKR</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; font-weight: 950; font-size: 15px; padding-top: 4px;">
+                    <div style="display: flex; justify-content: space-between; font-weight: 950; font-size: 16px; padding: 6px 10px; background-color: #fef2f2; border-radius: 6px; color: #dc2626;">
                         <span>Net Outstanding Due:</span>
-                        <span class="text-danger">${invoice.newBalance.toFixed(2)} LKR</span>
+                        <span>${invoice.newBalance.toFixed(2)} LKR</span>
                     </div>
                 </div>
             </div>
 
-            <div style="text-align: center; font-size: 9px; margin-top: 40px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 12px; font-style: italic;">
+            <div style="text-align: center; font-size: 10px; margin-top: 50px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 15px; font-style: italic; letter-spacing: 0.5px;">
                 Delight in every bite! Thank you for your continued partnership with Dilum Bake House.
             </div>
         `;
@@ -528,8 +532,6 @@ export default function BakeryInvoicesPage() {
         if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
             navigator.share({
                 files: [pdfFile],
-                title: `Invoice #${whatsappInvoice?.invoiceNumber}`,
-                text: `Dilum Bake House Invoice - ${whatsappInvoice?.shopName}`,
             }).then(() => {
                 toast.success("Native share menu opened!");
             }).catch(err => {
@@ -539,7 +541,7 @@ export default function BakeryInvoicesPage() {
                 }
             });
         } else {
-            toast.error("File sharing not supported on this device/browser. Downloading PDF file instead.");
+            toast.info("PDF downloaded! You can now drag & drop this file into your WhatsApp chat.");
             const link = document.createElement('a');
             link.href = URL.createObjectURL(pdfFile);
             link.download = `Invoice-${whatsappInvoice?.invoiceNumber}.pdf`;
@@ -623,60 +625,48 @@ export default function BakeryInvoicesPage() {
     };
 
     const handleShareWhatsApp = (invoice) => {
-        const phoneStr = invoice.shopPhone || '';
-        const numbers = phoneStr.split(',').map(n => n.trim()).filter(Boolean);
-
-        if (numbers.length === 0) {
-            setWhatsappInvoice(invoice);
-            setCustomWhatsAppPhone('');
-            setIsWhatsappOpen(true);
-        } else if (numbers.length === 1) {
-            triggerWhatsAppRedirect(numbers[0], invoice);
-        } else {
-            setWhatsappInvoice(invoice);
-            setCustomWhatsAppPhone('');
-            setIsWhatsappOpen(true);
-        }
+        setWhatsappInvoice(invoice);
+        setCustomWhatsAppPhone('');
+        setIsWhatsappOpen(true);
     };
 
     // Receipt print trigger
     const handlePrint = (invoice) => {
         const printWindow = window.open('', '_blank');
         
-        // Filter items per slot
         const morningItems = invoice.items.filter(item => item.morningQty > 0);
         const afternoonItems = invoice.items.filter(item => item.afternoonQty > 0);
         const returnItems = invoice.items.filter(item => item.returnQty > 0);
 
         const morningTotal = morningItems.reduce((sum, item) => sum + (item.morningQty * item.price), 0);
         const afternoonTotal = afternoonItems.reduce((sum, item) => sum + (item.afternoonQty * item.price), 0);
-        const returnsTotalCalculated = returnItems.reduce((sum, item) => sum + (item.returnQty * item.price), 0);
+        const returnsTotal = returnItems.reduce((sum, item) => sum + (item.returnQty * item.price), 0);
 
         let morningHtml = '';
         if (morningItems.length > 0) {
             morningHtml = `
-                <div style="font-weight: bold; font-size: 11px; text-transform: uppercase; margin: 8px 0 4px 0; color: #1e3a8a; display: flex; align-items: center; gap: 4px;">Morning Deliveries</div>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+                <div class="section-title">Morning Deliveries</div>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                     <thead>
-                        <tr style="border-bottom: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb;">
-                            <th style="text-align: left; padding: 4px 0; font-size: 10px; color: #6b7280; font-weight: 600;">Item</th>
-                            <th style="text-align: right; padding: 4px 0; font-size: 10px; color: #6b7280; font-weight: 600; width: 15%;">Qty</th>
-                            <th style="text-align: right; padding: 4px 0; font-size: 10px; color: #6b7280; font-weight: 600; width: 25%;">Price</th>
-                            <th style="text-align: right; padding: 4px 0; font-size: 10px; color: #6b7280; font-weight: 600; width: 25%;">Total</th>
+                        <tr>
+                            <th style="text-align: left; width: 45%;">Product Name</th>
+                            <th style="text-align: right; width: 15%;">Quantity</th>
+                            <th style="text-align: right; width: 20%;">Unit Price (LKR)</th>
+                            <th style="text-align: right; width: 20%;">Total Amount (LKR)</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${morningItems.map(item => `
-                            <tr style="border-bottom: 1px dashed #f3f4f6;">
-                                <td style="padding: 4px 0; font-size: 11px; font-weight: 500;">${item.productName}</td>
-                                <td style="padding: 4px 0; text-align: right; font-size: 11px;">${item.morningQty}</td>
-                                <td style="padding: 4px 0; text-align: right; font-size: 11px;">${item.price.toFixed(2)}</td>
-                                <td style="padding: 4px 0; text-align: right; font-size: 11px; font-weight: 600;">${(item.morningQty * item.price).toFixed(2)}</td>
+                            <tr>
+                                <td style="font-weight: 600; text-align: left; color: #0f172a;">${item.productName}</td>
+                                <td style="text-align: right; font-weight: 600; color: #1e3a8a;">${item.morningQty}</td>
+                                <td style="text-align: right;">${item.price.toFixed(2)}</td>
+                                <td style="text-align: right; font-weight: 700; color: #0f172a;">${(item.morningQty * item.price).toFixed(2)}</td>
                             </tr>
                         `).join('')}
-                        <tr>
-                            <td colspan="3" style="text-align: right; font-weight: 600; padding: 6px 0 0 0; font-size: 10px; color: #6b7280;">Morning Subtotal:</td>
-                            <td style="text-align: right; font-weight: 700; padding: 6px 0 0 0; font-size: 11px; color: #374151;">${morningTotal.toFixed(2)} LKR</td>
+                        <tr style="background-color: #f8fafc;">
+                            <td colspan="3" style="text-align: right; font-weight: 800; border-top: 1.5px solid #cbd5e1 !important; padding: 10px 14px !important; color: #475569; font-size: 11px;">MORNING DELIVERIES TOTAL:</td>
+                            <td style="text-align: right; font-weight: 800; color: #1e3a8a; border-top: 1.5px solid #cbd5e1 !important; padding: 10px 14px !important; font-size: 13px;">${morningTotal.toFixed(2)} LKR</td>
                         </tr>
                     </tbody>
                 </table>
@@ -686,28 +676,28 @@ export default function BakeryInvoicesPage() {
         let afternoonHtml = '';
         if (afternoonItems.length > 0) {
             afternoonHtml = `
-                <div style="font-weight: bold; font-size: 11px; text-transform: uppercase; margin: 12px 0 4px 0; color: #1e3a8a; display: flex; align-items: center; gap: 4px;">Afternoon Deliveries</div>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+                <div class="section-title">Afternoon Deliveries</div>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                     <thead>
-                        <tr style="border-bottom: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb;">
-                            <th style="text-align: left; padding: 4px 0; font-size: 10px; color: #6b7280; font-weight: 600;">Item</th>
-                            <th style="text-align: right; padding: 4px 0; font-size: 10px; color: #6b7280; font-weight: 600; width: 15%;">Qty</th>
-                            <th style="text-align: right; padding: 4px 0; font-size: 10px; color: #6b7280; font-weight: 600; width: 25%;">Price</th>
-                            <th style="text-align: right; padding: 4px 0; font-size: 10px; color: #6b7280; font-weight: 600; width: 25%;">Total</th>
+                        <tr>
+                            <th style="text-align: left; width: 45%;">Product Name</th>
+                            <th style="text-align: right; width: 15%;">Quantity</th>
+                            <th style="text-align: right; width: 20%;">Unit Price (LKR)</th>
+                            <th style="text-align: right; width: 20%;">Total Amount (LKR)</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${afternoonItems.map(item => `
-                            <tr style="border-bottom: 1px dashed #f3f4f6;">
-                                <td style="padding: 4px 0; font-size: 11px; font-weight: 500;">${item.productName}</td>
-                                <td style="padding: 4px 0; text-align: right; font-size: 11px;">${item.afternoonQty}</td>
-                                <td style="padding: 4px 0; text-align: right; font-size: 11px;">${item.price.toFixed(2)}</td>
-                                <td style="padding: 4px 0; text-align: right; font-size: 11px; font-weight: 600;">${(item.afternoonQty * item.price).toFixed(2)}</td>
+                            <tr>
+                                <td style="font-weight: 600; text-align: left; color: #0f172a;">${item.productName}</td>
+                                <td style="text-align: right; font-weight: 600; color: #1e3a8a;">${item.afternoonQty}</td>
+                                <td style="text-align: right;">${item.price.toFixed(2)}</td>
+                                <td style="text-align: right; font-weight: 700; color: #0f172a;">${(item.afternoonQty * item.price).toFixed(2)}</td>
                             </tr>
                         `).join('')}
-                        <tr>
-                            <td colspan="3" style="text-align: right; font-weight: 600; padding: 6px 0 0 0; font-size: 10px; color: #6b7280;">Afternoon Subtotal:</td>
-                            <td style="text-align: right; font-weight: 700; padding: 6px 0 0 0; font-size: 11px; color: #374151;">${afternoonTotal.toFixed(2)} LKR</td>
+                        <tr style="background-color: #f8fafc;">
+                            <td colspan="3" style="text-align: right; font-weight: 800; border-top: 1.5px solid #cbd5e1 !important; padding: 10px 14px !important; color: #475569; font-size: 11px;">AFTERNOON DELIVERIES TOTAL:</td>
+                            <td style="text-align: right; font-weight: 800; color: #1e3a8a; border-top: 1.5px solid #cbd5e1 !important; padding: 10px 14px !important; font-size: 13px;">${afternoonTotal.toFixed(2)} LKR</td>
                         </tr>
                     </tbody>
                 </table>
@@ -717,28 +707,28 @@ export default function BakeryInvoicesPage() {
         let returnsHtml = '';
         if (returnItems.length > 0) {
             returnsHtml = `
-                <div style="font-weight: bold; font-size: 11px; text-transform: uppercase; margin: 12px 0 4px 0; color: #1e3a8a; display: flex; align-items: center; gap: 4px;">Returns Received</div>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+                <div class="section-title" style="color: #b91c1c; border-left-color: #b91c1c;">Returns Received</div>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                     <thead>
-                        <tr style="border-bottom: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb;">
-                            <th style="text-align: left; padding: 4px 0; font-size: 10px; color: #6b7280; font-weight: 600;">Item</th>
-                            <th style="text-align: right; padding: 4px 0; font-size: 10px; color: #6b7280; font-weight: 600; width: 15%;">Qty</th>
-                            <th style="text-align: right; padding: 4px 0; font-size: 10px; color: #6b7280; font-weight: 600; width: 25%;">Price</th>
-                            <th style="text-align: right; padding: 4px 0; font-size: 10px; color: #6b7280; font-weight: 600; width: 25%;">Total</th>
+                        <tr>
+                            <th style="text-align: left; width: 45%;">Product Name</th>
+                            <th style="text-align: right; width: 15%;">Quantity</th>
+                            <th style="text-align: right; width: 20%;">Unit Price (LKR)</th>
+                            <th style="text-align: right; width: 20%;">Total Amount (LKR)</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${returnItems.map(item => `
-                            <tr style="border-bottom: 1px dashed #f3f4f6;">
-                                <td style="padding: 4px 0; font-size: 11px; font-weight: 500;">${item.productName}</td>
-                                <td style="padding: 4px 0; text-align: right; font-size: 11px;">${item.returnQty}</td>
-                                <td style="padding: 4px 0; text-align: right; font-size: 11px;">${item.price.toFixed(2)}</td>
-                                <td style="padding: 4px 0; text-align: right; font-size: 11px; font-weight: 600; color: #1e3a8a;">-${(item.returnQty * item.price).toFixed(2)}</td>
+                            <tr>
+                                <td style="font-weight: 600; text-align: left; color: #0f172a;">${item.productName}</td>
+                                <td style="text-align: right; font-weight: 600; color: #b91c1c;">${item.returnQty}</td>
+                                <td style="text-align: right;">${item.price.toFixed(2)}</td>
+                                <td style="text-align: right; font-weight: 700; color: #b91c1c;">-${(item.returnQty * item.price).toFixed(2)}</td>
                             </tr>
                         `).join('')}
-                        <tr>
-                            <td colspan="3" style="text-align: right; font-weight: 600; padding: 6px 0 0 0; font-size: 10px; color: #6b7280;">Returns Subtotal:</td>
-                            <td style="text-align: right; font-weight: 700; padding: 6px 0 0 0; font-size: 11px; color: #1e3a8a;">-${returnsTotalCalculated.toFixed(2)} LKR</td>
+                        <tr style="background-color: #fef2f2;">
+                            <td colspan="3" style="text-align: right; font-weight: 800; border-top: 1.5px solid #fca5a5 !important; padding: 10px 14px !important; color: #b91c1c; font-size: 11px;">RETURNS TOTAL:</td>
+                            <td style="text-align: right; font-weight: 800; color: #b91c1c; border-top: 1.5px solid #fca5a5 !important; padding: 10px 14px !important; font-size: 13px;">-${returnsTotal.toFixed(2)} LKR</td>
                         </tr>
                     </tbody>
                 </table>
@@ -748,9 +738,9 @@ export default function BakeryInvoicesPage() {
         let specialNoteHtml = '';
         if (invoice.specialNote && invoice.specialNote.trim() !== '') {
             specialNoteHtml = `
-                <div style="margin: 12px 0; padding: 8px 10px; border-left: 3px solid #1e3a8a; background-color: #f9fafb; font-size: 11px; border-radius: 0 6px 6px 0; line-height: 1.4; border-top: 1px solid #f3f4f6; border-right: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6; color: #4b5563;">
-                    <strong style="color: #1e3a8a; text-transform: uppercase; font-size: 9px; display: block; margin-bottom: 2px; letter-spacing: 0.5px;">Special Note / Remarks</strong>
-                    ${invoice.specialNote}
+                <div style="border-left: 4px solid #1e3a8a; background-color: #f8fafc; padding: 15px; border-radius: 0 8px 8px 0; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; margin-top: 10px;">
+                    <strong style="text-transform: uppercase; font-size: 10px; display: block; margin-bottom: 6px; letter-spacing: 0.5px; color: #1e3a8a;">Special Note / Remarks</strong>
+                    <span style="font-size: 12px; color: #475569; line-height: 1.5; display: block; font-style: italic;">"${invoice.specialNote}"</span>
                 </div>
             `;
         }
@@ -758,115 +748,151 @@ export default function BakeryInvoicesPage() {
         printWindow.document.write(`
             <html>
             <head>
-                <title>Bill: ${invoice.invoiceNumber}</title>
+                <title>Invoice: ${invoice.invoiceNumber}</title>
                 <style>
-                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; width: 80mm; margin: 0 auto; padding: 5px; color: #1f2937; line-height: 1.3; }
-                    .header { text-align: center; margin-bottom: 12px; }
-                    .header h1 { font-size: 18px; margin: 0 0 3px 0; font-weight: 800; color: #111827; letter-spacing: 0.5px; }
-                    .header p { font-size: 10px; margin: 0 0 2px 0; color: #6b7280; }
-                    .divider { border-top: 1px solid #e5e7eb; margin: 10px 0; }
-                    .info { font-size: 10px; margin-bottom: 12px; line-height: 1.4; background-color: #f9fafb; padding: 8px; border-radius: 8px; border: 1px solid #f3f4f6; }
-                    .info-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
-                    .info-label { color: #6b7280; font-weight: 500; }
-                    .info-value { font-weight: 700; color: #1f2937; }
-                    .totals { font-size: 11px; line-height: 1.5; margin-top: 12px; background-color: #f9fafb; padding: 8px; border-radius: 8px; border: 1px solid #f3f4f6; }
-                    .totals-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
-                    .totals-label { color: #4b5563; font-weight: 500; }
-                    .totals-value { font-weight: 600; color: #1f2937; }
-                    .bold-row { font-size: 12px; font-weight: 800; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #d1d5db; }
-                    .bold-row .totals-label { color: #111827; }
-                    .bold-row .totals-value { color: #1e3a8a; font-size: 13px; }
-                    .footer { text-align: center; font-size: 9px; margin-top: 25px; color: #9ca3af; border-top: 1px dashed #e5e7eb; padding-top: 8px; }
+                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+                    body {
+                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                        color: #1e293b;
+                        line-height: 1.5;
+                        padding: 20px;
+                        max-width: 210mm;
+                        margin: 0 auto;
+                        box-sizing: border-box;
+                    }
+                    th {
+                        background-color: #f8fafc !important;
+                        color: #475569 !important;
+                        font-weight: 700 !important;
+                        font-size: 11px !important;
+                        text-transform: uppercase !important;
+                        letter-spacing: 0.5px !important;
+                        padding: 10px 14px !important;
+                        border-bottom: 2px solid #e2e8f0 !important;
+                    }
+                    td {
+                        padding: 10px 14px !important;
+                        font-size: 12px !important;
+                        border-bottom: 1px solid #f1f5f9 !important;
+                        color: #334155 !important;
+                    }
+                    .section-title {
+                        font-size: 13px !important;
+                        font-weight: 800 !important;
+                        text-transform: uppercase !important;
+                        color: #1e3a8a !important;
+                        border-left: 3.5px solid #1e3a8a !important;
+                        padding-left: 10px !important;
+                        margin-top: 30px !important;
+                        margin-bottom: 12px !important;
+                        letter-spacing: 0.5px !important;
+                    }
                     @media print {
-                        @page {
-                            margin: 0;
-                            size: auto;
-                        }
                         body {
-                            width: 76mm;
-                            margin: 4mm auto;
-                            padding: 0;
+                            padding: 10mm;
+                            max-width: 100%;
                         }
-                        .no-print { display: none; }
+                        @page {
+                            margin: 10mm;
+                            size: A4 portrait;
+                        }
                     }
                 </style>
             </head>
             <body>
-                <div class="header">
-                    <h1 style="font-size: 19px; font-weight: 900; margin: 0 0 2px 0;">DILUM BAKE HOUSE</h1>
-                    <p style="font-size: 10px; color: #4b5563; font-weight: 500; margin: 0 0 4px 0;">39/A, Muruthalawa road, Dehideniya, Peradeniya</p>
-                    <p style="font-size: 10px; font-weight: 600; color: #1e3a8a; margin: 0 0 2px 0;">Tel: 0762125472 / 0774334046</p>
-                    <p style="font-size: 9px; color: #4b5563; font-weight: 600; margin: 0;">Reg No: මපස/ප්‍රාලේ/යනු/2978</p>
+                <div style="background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #ffffff; padding: 25px 30px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                    <div>
+                        <h1 style="font-size: 28px; font-weight: 900; margin: 0 0 4px 0; letter-spacing: 1px; color: #ffffff;">DILUM BAKE HOUSE</h1>
+                        <p style="font-size: 11px; color: #93c5fd; margin: 0 0 2px 0; font-weight: 500; opacity: 0.95;">39/A, Muruthalawa road, Dehideniya, Peradeniya</p>
+                        <p style="font-size: 11px; color: #93c5fd; margin: 0 0 2px 0; font-weight: 500; opacity: 0.95;">Tel: 0762125472 / 0774334046</p>
+                        <p style="font-size: 10px; color: #ffffff; margin: 6px 0 0 0; font-weight: 700; background-color: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 6px; display: inline-block;">Reg No: මපස/ප්‍රාලේ/යනු/2978</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <h2 style="font-size: 26px; font-weight: 900; margin: 0 0 8px 0; letter-spacing: 1.5px; color: #ffffff;">INVOICE</h2>
+                        <div style="font-size: 11px; background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 10px; border-radius: 8px; text-align: left; min-width: 200px; display: inline-block; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; gap: 20px;">
+                                <span style="color: #93c5fd;">Invoice No:</span>
+                                <span style="font-weight: 700; color: #ffffff;">${invoice.invoiceNumber}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; gap: 20px;">
+                                <span style="color: #93c5fd;">Date:</span>
+                                <span style="font-weight: 700; color: #ffffff;">${new Date(invoice.date).toLocaleDateString()}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; gap: 20px;">
+                                <span style="color: #93c5fd;">Status:</span>
+                                <span style="font-weight: 800; color: ${invoice.newBalance <= 0 ? '#4ade80' : '#f87171'}; text-transform: uppercase;">${invoice.newBalance <= 0 ? 'Paid' : 'Unpaid'}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="info">
-                    <div class="info-row">
-                        <span class="info-label">Invoice #</span>
-                        <span class="info-value" style="font-family: monospace;">${invoice.invoiceNumber}</span>
+                <div style="margin-bottom: 25px; border-left: 4px solid #1e3a8a; background-color: #f8fafc; border-radius: 0 8px 8px 0; padding: 15px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                    <h3 style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px;">Billed To (Customer Details)</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
+                        <div>
+                            <div style="font-size: 16px; font-weight: 800; color: #0f172a; text-transform: uppercase;">${invoice.shopName}</div>
+                            ${invoice.shopPhone ? `
+                            <div style="font-size: 12px; color: #475569; margin-top: 4px;">
+                                <span>Phone:</span> <span style="font-weight: 700; color: #1e3a8a;">${invoice.shopPhone}</span>
+                            </div>` : ''}
+                        </div>
+                        <div style="text-align: right; font-size: 11px; color: #64748b; max-width: 250px; font-style: italic;">
+                            Outstanding balance carries forward to the next billing cycle.
+                        </div>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Date</span>
-                        <span class="info-value">${new Date(invoice.date).toLocaleDateString()}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Shop</span>
-                        <span class="info-value" style="text-transform: uppercase;">${invoice.shopName}</span>
-                    </div>
-                    ${invoice.shopPhone ? `
-                    <div class="info-row">
-                        <span class="info-label">Phone</span>
-                        <span class="info-value">${invoice.shopPhone}</span>
-                    </div>
-                    ` : ''}
                 </div>
 
                 ${morningHtml}
                 ${afternoonHtml}
                 ${returnsHtml}
-                
-                ${specialNoteHtml}
 
-                <div class="totals">
-                    <div class="totals-row">
-                        <span class="totals-label">Morning Total:</span>
-                        <span class="totals-value">${morningTotal.toFixed(2)} LKR</span>
+                <div style="display: flex; gap: 25px; justify-content: space-between; margin-top: 30px; align-items: flex-start; page-break-inside: avoid;">
+                    <!-- Left: Special Notes -->
+                    <div style="flex: 1; min-width: 250px;">
+                        ${specialNoteHtml}
                     </div>
-                    <div class="totals-row">
-                        <span class="totals-label">Afternoon Total:</span>
-                        <span class="totals-value">${afternoonTotal.toFixed(2)} LKR</span>
-                    </div>
-                    <div class="totals-row" style="border-top: 1px solid #f3f4f6; padding-top: 2px; margin-top: 2px;">
-                        <span class="totals-label" style="font-weight: 600;">Today Total (Delivered):</span>
-                        <span class="totals-value" style="font-weight: 700;">${invoice.deliveredTotal.toFixed(2)} LKR</span>
-                    </div>
-                    <div class="totals-row" style="color: #1e3a8a;">
-                        <span class="totals-label" style="color: #1e3a8a;">Less Returns:</span>
-                        <span class="totals-value" style="color: #1e3a8a;">-${invoice.returnsTotal.toFixed(2)} LKR</span>
-                    </div>
-                    <div class="totals-row">
-                        <span class="totals-label">Old Outstanding:</span>
-                        <span class="totals-value">${invoice.oldBalance.toFixed(2)} LKR</span>
-                    </div>
-                    
-                    <div class="totals-row bold-row">
-                        <span class="totals-label">Grand Total:</span>
-                        <span class="totals-value">${invoice.grandTotal.toFixed(2)} LKR</span>
-                    </div>
-                    <div class="totals-row" style="color: #10b981; font-weight: bold; margin-top: 2px;">
-                        <span class="totals-label" style="color: #10b981;">Less Paid Today:</span>
-                        <span class="totals-value" style="color: #10b981;">-${invoice.amountReceived.toFixed(2)} LKR</span>
-                    </div>
-                    
-                    <div class="totals-row bold-row" style="border-top: 1px solid #111827; padding-top: 4px; margin-top: 4px;">
-                        <span class="totals-label" style="text-transform: uppercase; font-size: 11px;">Balance Outstanding:</span>
-                        <span class="totals-value" style="font-size: 14px; font-weight: 900; text-decoration: underline; color: #1e3a8a;">${invoice.newBalance.toFixed(2)} LKR</span>
+
+                    <!-- Right: Calculation Box -->
+                    <div style="width: 340px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; font-size: 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #475569;">
+                            <span>Morning Total:</span>
+                            <span style="font-weight: 600; color: #1e293b;">${morningTotal.toFixed(2)} LKR</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #475569;">
+                            <span>Afternoon Total:</span>
+                            <span style="font-weight: 600; color: #1e293b;">${afternoonTotal.toFixed(2)} LKR</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: 800; background-color: #eff6ff; border-radius: 6px; padding: 6px 10px; color: #1e3a8a; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                            <span>Today Total (Delivered):</span>
+                            <span>${(morningTotal + afternoonTotal).toFixed(2)} LKR</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #475569;">
+                            <span>Returns Total:</span>
+                            <span style="font-weight: 600; color: #dc2626;">-${returnsTotal.toFixed(2)} LKR</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #475569; border-bottom: 1px dashed #cbd5e1; padding-bottom: 6px;">
+                            <span>Old Outstanding:</span>
+                            <span style="font-weight: 600; color: #1e293b;">${invoice.oldBalance.toFixed(2)} LKR</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: 800; font-size: 14px;">
+                            <span>Grand Total:</span>
+                            <span style="color: #1e3a8a;">${invoice.grandTotal.toFixed(2)} LKR</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 800; font-size: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 6px;">
+                            <span>Amount Paid Today:</span>
+                            <span style="color: #16a34a;">-${invoice.amountReceived.toFixed(2)} LKR</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-weight: 950; font-size: 16px; padding: 6px 10px; background-color: #fef2f2; border-radius: 6px; color: #dc2626; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                            <span>Net Outstanding Due:</span>
+                            <span>${invoice.newBalance.toFixed(2)} LKR</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="footer">
-                    <p style="font-weight: bold; color: #4b5563;">Thank You For Your Business!</p>
-                    <p style="font-size: 8px;">System Generated Invoice</p>
+                <div style="text-align: center; font-size: 10px; margin-top: 50px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 15px; font-style: italic; letter-spacing: 0.5px;">
+                    Delight in every bite! Thank you for your continued partnership with Dilum Bake House.
                 </div>
+
                 <script>
                     window.onload = function() { window.print(); window.close(); }
                 </script>

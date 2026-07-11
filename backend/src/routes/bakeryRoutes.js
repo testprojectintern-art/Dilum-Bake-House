@@ -6,6 +6,7 @@ import {
     getShops,
     createShop,
     suggestShops,
+    deleteShop,
     getStructures,
     getStructureById,
     createStructure,
@@ -22,7 +23,12 @@ import {
     getNuwaraEliyaDeliveryById,
     createNuwaraEliyaDelivery,
     updateNuwaraEliyaDelivery,
-    deleteNuwaraEliyaDelivery
+    deleteNuwaraEliyaDelivery,
+    getFinanceItems,
+    createFinanceItem,
+    updateFinanceItem,
+    deleteFinanceItem,
+    autoAllocateBakeryIncome
 } from '../controllers/bakeryController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 
@@ -48,6 +54,8 @@ router.route('/shops')
     .post(createShop);
 router.route('/shops/suggest')
     .get(suggestShops);
+router.route('/shops/:id')
+    .delete(deleteShop);
 
 // Structures
 router.route('/structures')
@@ -77,5 +85,15 @@ router.route('/nuwara-eliya/:id')
     .get(getNuwaraEliyaDeliveryById)
     .put(updateNuwaraEliyaDelivery)
     .delete(deleteNuwaraEliyaDelivery);
+
+// Finance & Leases
+router.route('/finance')
+    .get(getFinanceItems)
+    .post(createFinanceItem);
+router.route('/finance/auto-allocate')
+    .post(autoAllocateBakeryIncome);
+router.route('/finance/:id')
+    .put(updateFinanceItem)
+    .delete(deleteFinanceItem);
 
 export default router;

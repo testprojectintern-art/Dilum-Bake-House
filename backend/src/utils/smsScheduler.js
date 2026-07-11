@@ -1,4 +1,5 @@
 import Customer from '../models/Customer.js';
+import BakeryFinanceItem from '../models/BakeryFinanceItem.js';
 import { sendGeneralSms } from './smsHelper.js';
 
 /**
@@ -66,13 +67,84 @@ export const checkAndSendAnniversarySms = async () => {
 };
 
 /**
- * Initializes the automated daily anniversary SMS task.
+ * Checks for upcoming bakery finance obligations (leases, fuel, cheques, utility bills, license/insurance)
+ * due within the next 2 days (or past due) and sends SMS notifications.
+ */
+export const checkAndSendBakeryFinanceAlerts = async () => {
+    try {
+        console.log('[SMS SCHEDULER] Running daily check for upcoming finance/lease alerts...');
+        
+        // Target date is 2 days from now (catch all up to end of day 2 days from now)
+        const targetDateEnd = new Date();
+        targetDateEnd.setDate(targetDateEnd.getDate() + 2);
+        targetDateEnd.setHours(23, 59, 59, 999);
+
+        // Find pending items due in 2 days (or past due and not alerted yet)
+        const dueItems = await BakeryFinanceItem.find({
+            status: 'pending',
+            alertSent: false,
+            dueDate: { $lte: targetDateEnd }
+        });
+
+        console.log(`[SMS SCHEDULER] Found ${dueItems.length} finance/lease items due for alert.`);
+
+        for (const item of dueItems) {
+            const formattedDate = new Date(item.dueDate).toLocaleDateString('en-LK', {
+                year: 'numeric',
+                month: 'short',
+                day: '2-digit'
+            });
+
+            let message = '';
+            const typeLabels = {
+                piti_cheque: 'Flour (Piti) Cheque',
+                vehicle_fuel: 'Vehicle Fuel Expense',
+                vehicle_finance: 'Vehicle Lease/Finance',
+                vehicle_insurance: 'Vehicle Insurance Expiry',
+                vehicle_license: 'Vehicle License Expiry',
+                utility_bill: 'Utility Bill',
+                other: 'Payment Obligation'
+            };
+
+            const typeLabel = typeLabels[item.type] || 'Payment Obligation';
+            const remaining = item.amount - item.paidAmount;
+
+            if (item.type === 'piti_cheque') {
+                message = `Alert: Flour (Piti) Cheque No. ${item.chequeNumber || 'N/A'} of Rs. ${item.amount.toFixed(2)} is due for clearing on ${formattedDate}. Notes: ${item.notes || 'none'}`;
+            } else if (item.type === 'vehicle_insurance' || item.type === 'vehicle_license') {
+                message = `Alert: ${typeLabel} for "${item.title}" will expire on ${formattedDate}. Please renew immediately.`;
+            } else {
+                message = `Alert: ${typeLabel} for "${item.title}" is due on ${formattedDate}. Total: Rs. ${item.amount.toFixed(2)}, Bal Due: Rs. ${remaining.toFixed(2)}.`;
+            }
+
+            const alertPhones = item.alertPhoneNumbers && item.alertPhoneNumbers.length > 0
+                ? item.alertPhoneNumbers
+                : ['0772268608', '0762125472'];
+
+            for (const phone of alertPhones) {
+                console.log(`[SMS SCHEDULER] Sending finance alert to ${phone}: "${message}"`);
+                await sendGeneralSms(phone, message);
+            }
+
+            item.alertSent = true;
+            await item.save();
+        }
+
+        console.log('[SMS SCHEDULER] Finance alerts check completed.');
+    } catch (error) {
+        console.error('[SMS SCHEDULER ERROR] Failed checking finance alerts:', error);
+    }
+};
+
+/**
+ * Initializes the automated daily anniversary and finance alerts SMS task.
  * Schedules the task to run once every 24 hours.
  */
 export const initSmsScheduler = () => {
     // Run once on startup (with a small delay to avoid slowing server boot)
-    setTimeout(() => {
-        checkAndSendAnniversarySms();
+    setTimeout(async () => {
+        await checkAndSendAnniversarySms();
+        await checkAndSendBakeryFinanceAlerts();
     }, 10000); // 10 seconds after server starts
 
     // Calculate time until next check (e.g. next day 9:00 AM)
@@ -94,6 +166,7 @@ export const initSmsScheduler = () => {
         
         setTimeout(async () => {
             await checkAndSendAnniversarySms();
+            await checkAndSendBakeryFinanceAlerts();
             // Reschedule after execution
             scheduleNextRun();
         }, delay);

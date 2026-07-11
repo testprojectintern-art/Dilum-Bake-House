@@ -151,6 +151,7 @@ export const sendBakeryInvoiceSms = async (invoice, recipients) => {
             });
         }
 
+        const returnsTotal = Number(invoice.returnsTotal || 0);
         const todayTotal = Number(invoice.deliveredTotal || 0);
         const oldBalance = Number(invoice.oldBalance || 0);
         const fullAmount = Number(invoice.grandTotal || 0);
@@ -161,6 +162,7 @@ export const sendBakeryInvoiceSms = async (invoice, recipients) => {
             `Morning: Rs. ${morningAmount.toFixed(2)}\n` +
             `Afternoon: Rs. ${afternoonAmount.toFixed(2)}\n` +
             `Today Total: Rs. ${todayTotal.toFixed(2)}\n` +
+            `Returns: Rs. ${returnsTotal.toFixed(2)}\n` +
             `Old Bal: Rs. ${oldBalance.toFixed(2)}\n` +
             `Full Amt: Rs. ${fullAmount.toFixed(2)}\n` +
             `Today Paid: Rs. ${todayPaidAmount.toFixed(2)}\n` +

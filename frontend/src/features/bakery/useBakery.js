@@ -62,6 +62,20 @@ export const useCreateBakeryShop = () => {
     });
 };
 
+export const useDeleteBakeryShop = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: bakeryApi.deleteShop,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['bakeryShops'] });
+            toast.success('Shop deleted successfully');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to delete shop');
+        },
+    });
+};
+
 // Structures Hooks
 export const useBakeryStructures = () => {
     return useQuery({
@@ -259,6 +273,74 @@ export const useDeleteNuwaraEliyaDelivery = () => {
         },
         onError: (err) => {
             toast.error(err.response?.data?.message || 'Failed to delete record');
+        },
+    });
+};
+
+// Finance & Leases Hooks
+export const useBakeryFinanceItems = (params = {}) => {
+    return useQuery({
+        queryKey: ['bakeryFinanceItems', params],
+        queryFn: () => bakeryApi.getFinanceItems(params),
+        placeholderData: (prev) => prev,
+    });
+};
+
+export const useCreateBakeryFinanceItem = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: bakeryApi.createFinanceItem,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['bakeryFinanceItems'] });
+            queryClient.invalidateQueries({ queryKey: ['bankAccounts'] });
+            toast.success('Finance item saved successfully');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to save item');
+        },
+    });
+};
+
+export const useUpdateBakeryFinanceItem = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }) => bakeryApi.updateFinanceItem(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['bakeryFinanceItems'] });
+            queryClient.invalidateQueries({ queryKey: ['bankAccounts'] });
+            toast.success('Finance item updated successfully');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to update item');
+        },
+    });
+};
+
+export const useDeleteBakeryFinanceItem = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: bakeryApi.deleteFinanceItem,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['bakeryFinanceItems'] });
+            queryClient.invalidateQueries({ queryKey: ['bankAccounts'] });
+            toast.success('Finance item deleted successfully');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to delete item');
+        },
+    });
+};
+
+export const useAutoAllocateBakeryIncome = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: bakeryApi.autoAllocateBakeryIncome,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['bakeryFinanceItems'] });
+            toast.success('Income allocated successfully');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to allocate income');
         },
     });
 };

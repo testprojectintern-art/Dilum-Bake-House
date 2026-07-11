@@ -4,6 +4,8 @@ import BakeryShop from '../models/BakeryShop.js';
 import BakeryBillingStructure from '../models/BakeryBillingStructure.js';
 import BakeryInvoice from '../models/BakeryInvoice.js';
 import NuwaraEliyaDelivery from '../models/NuwaraEliyaDelivery.js';
+import BakeryFinanceItem from '../models/BakeryFinanceItem.js';
+import BankAccount from '../models/BankAccount.js';
 import { sendBakeryInvoiceSms } from '../utils/smsHelper.js';
 
 // Helper: Generate Invoice Number (e.g. DBH-20260708-001)
@@ -177,6 +179,16 @@ export const suggestShops = asyncHandler(async (req, res) => {
         ]
     }).limit(10);
     res.json({ success: true, data: shops });
+});
+
+export const deleteShop = asyncHandler(async (req, res) => {
+    const shop = await BakeryShop.findById(req.params.id);
+    if (!shop) {
+        res.status(404);
+        throw new Error('Shop not found');
+    }
+    await shop.deleteOne();
+    res.json({ success: true, message: 'Shop deleted successfully' });
 });
 
 // ── Billing Structures ───────────────────────────────────────────────
@@ -1090,3 +1102,161 @@ export const deleteNuwaraEliyaDelivery = asyncHandler(async (req, res) => {
     await delivery.deleteOne();
     res.json({ success: true, message: 'Nuwara Eliya delivery record removed successfully' });
 });
+
+// ── Finance & Leases ──────────────────────────────────────────────────
+export const getFinanceItems = asyncHandler(async (req, res) => {
+    const { type, status, startDate, endDate } = req.query;
+    const filter = {};
+    if (type) filter.type = type;
+    if (status) filter.status = status;
+    if (startDate || endDate) {
+        filter.dueDate = {};
+        if (startDate) filter.dueDate.$gte = new Date(startDate);
+        if (endDate) filter.dueDate.$lte = new Date(endDate);
+    }
+    const items = await BakeryFinanceItem.find(filter).sort({ dueDate: 1 });
+    res.json({ success: true, count: items.length, data: items });
+});
+
+export const createFinanceItem = asyncHandler(async (req, res) => {
+    const { title, type, amount, paidAmount, dueDate, paymentSourceType, paymentSourceId, chequeNumber, notes } = req.body;
+    
+    const item = await BakeryFinanceItem.create({
+        title,
+        type,
+        amount: Number(amount),
+        paidAmount: Number(paidAmount || 0),
+        dueDate: new Date(dueDate),
+        status: Number(paidAmount || 0) >= Number(amount) ? 'completed' : 'pending',
+        paymentSourceType: paymentSourceType || 'none',
+        paymentSourceId: paymentSourceId || null,
+        chequeNumber,
+        notes,
+        createdBy: req.user._id
+    });
+
+    if (item.paymentSourceType === 'bank_account' && item.paymentSourceId && item.paidAmount > 0) {
+        const bankAccount = await BankAccount.findById(item.paymentSourceId);
+        if (bankAccount) {
+            bankAccount.currentBalance -= item.paidAmount;
+            await bankAccount.save();
+        }
+    }
+
+    res.status(201).json({ success: true, data: item });
+});
+
+export const updateFinanceItem = asyncHandler(async (req, res) => {
+    const { title, type, amount, paidAmount, dueDate, paymentSourceType, paymentSourceId, chequeNumber, notes, status } = req.body;
+    const item = await BakeryFinanceItem.findById(req.params.id);
+    if (!item) {
+        res.status(404);
+        throw new Error('Finance item not found');
+    }
+
+    const prevPaidAmount = item.paidAmount;
+    const prevSourceType = item.paymentSourceType;
+    const prevSourceId = item.paymentSourceId;
+
+    item.title = title || item.title;
+    item.type = type || item.type;
+    item.amount = amount !== undefined ? Number(amount) : item.amount;
+    item.paidAmount = paidAmount !== undefined ? Number(paidAmount) : item.paidAmount;
+    item.dueDate = dueDate ? new Date(dueDate) : item.dueDate;
+    item.paymentSourceType = paymentSourceType !== undefined ? paymentSourceType : item.paymentSourceType;
+    item.paymentSourceId = paymentSourceId !== undefined ? paymentSourceId : item.paymentSourceId;
+    item.chequeNumber = chequeNumber !== undefined ? chequeNumber : item.chequeNumber;
+    item.notes = notes !== undefined ? notes : item.notes;
+    item.status = status || (item.paidAmount >= item.amount ? 'completed' : 'pending');
+
+    await item.save();
+
+    const diff = item.paidAmount - prevPaidAmount;
+    
+    if (prevSourceType === 'bank_account' && prevSourceId && prevPaidAmount > 0) {
+        if (item.paymentSourceType !== 'bank_account' || String(item.paymentSourceId) !== String(prevSourceId)) {
+            const prevBank = await BankAccount.findById(prevSourceId);
+            if (prevBank) {
+                prevBank.currentBalance += prevPaidAmount;
+                await prevBank.save();
+            }
+            if (item.paymentSourceType === 'bank_account' && item.paymentSourceId && item.paidAmount > 0) {
+                const newBank = await BankAccount.findById(item.paymentSourceId);
+                if (newBank) {
+                    newBank.currentBalance -= item.paidAmount;
+                    await newBank.save();
+                }
+            }
+        } else if (diff !== 0) {
+            const bank = await BankAccount.findById(item.paymentSourceId);
+            if (bank) {
+                bank.currentBalance -= diff;
+                await bank.save();
+            }
+        }
+    } else if (item.paymentSourceType === 'bank_account' && item.paymentSourceId && diff !== 0) {
+        const bank = await BankAccount.findById(item.paymentSourceId);
+        if (bank) {
+            bank.currentBalance -= diff;
+            await bank.save();
+        }
+    }
+
+    res.json({ success: true, data: item });
+});
+
+export const deleteFinanceItem = asyncHandler(async (req, res) => {
+    const item = await BakeryFinanceItem.findById(req.params.id);
+    if (!item) {
+        res.status(404);
+        throw new Error('Finance item not found');
+    }
+
+    if (item.paymentSourceType === 'bank_account' && item.paymentSourceId && item.paidAmount > 0) {
+        const bank = await BankAccount.findById(item.paymentSourceId);
+        if (bank) {
+            bank.currentBalance += item.paidAmount;
+            await bank.save();
+        }
+    }
+
+    await item.deleteOne();
+    res.json({ success: true, message: 'Finance item deleted successfully' });
+});
+
+export const autoAllocateBakeryIncome = asyncHandler(async (req, res) => {
+    const { amount } = req.body;
+    if (!amount || Number(amount) <= 0) {
+        res.status(400);
+        throw new Error('Amount must be greater than zero');
+    }
+
+    let remainingIncome = Number(amount);
+    const pendingItems = await BakeryFinanceItem.find({ status: 'pending' }).sort({ dueDate: 1 });
+    const updatedItems = [];
+
+    for (const item of pendingItems) {
+        if (remainingIncome <= 0) break;
+
+        const needed = item.amount - item.paidAmount;
+        const allocate = Math.min(needed, remainingIncome);
+
+        item.paidAmount += allocate;
+        remainingIncome -= allocate;
+
+        if (item.paidAmount >= item.amount) {
+            item.status = 'completed';
+        }
+        await item.save();
+        updatedItems.push(item);
+    }
+
+    res.json({
+        success: true,
+        allocatedAmount: Number(amount) - remainingIncome,
+        remainingAmount: remainingIncome,
+        updatedCount: updatedItems.length,
+        data: updatedItems
+    });
+});
+

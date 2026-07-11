@@ -65,9 +65,7 @@ export default function NuwaraEliyaDetailPage() {
                     
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         navigator.share({
-                            files: [file],
-                            title: `Dilum Bake House - Bill ${del.billNumber}`,
-                            text: `Consignment Bill ${del.billNumber} for Nuwara Eliya delivery.`
+                            files: [file]
                         })
                         .then(() => resolve())
                         .catch((err) => {

@@ -38,6 +38,13 @@ const menuItems = [
         ],
     },
     {
+        label: 'Finance & Leases',
+        id: 'bakery-finance',
+        icon: Landmark,
+        path: '/bakery/finance',
+        allowedRoles: ALL_ROLES,
+    },
+    {
         label: 'Product Registry',
         id: 'bakery-products',
         icon: Package,
